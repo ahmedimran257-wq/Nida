@@ -26,6 +26,8 @@ import 'views/admin/post_announcement_screen.dart';
 import 'views/admin/add_scholar_screen.dart';
 import 'views/admin/add_masjid_screen.dart';
 import 'views/admin/team_management_screen.dart';
+import 'views/shell/main_shell.dart';
+import 'views/announcement/announcement_detail_screen.dart';
 
 final _routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
@@ -43,8 +45,17 @@ final _routerProvider = Provider<GoRouter>((ref) {
           return CityGateScreen(cityId: cityId, cityName: cityName);
         },
       ),
-      GoRoute(path: '/feed', builder: (context, state) => const FeedScreen()),
-      GoRoute(path: '/directory', builder: (context, state) => const DirectoryTabsScreen()),
+      
+      // Bottom Navigation Shell Route
+      ShellRoute(
+        builder: (context, state, child) => MainShell(child: child),
+        routes: [
+          GoRoute(path: '/feed', builder: (context, state) => const FeedScreen()),
+          GoRoute(path: '/directory', builder: (context, state) => const DirectoryTabsScreen()),
+          GoRoute(path: '/saved', builder: (context, state) => const SavedScreen()),
+        ],
+      ),
+
       GoRoute(
         path: '/scholar/:id',
         builder: (context, state) => ScholarDetailScreen(scholarId: state.pathParameters['id']!),
@@ -53,7 +64,13 @@ final _routerProvider = Provider<GoRouter>((ref) {
         path: '/masjid/:id',
         builder: (context, state) => MasjidDetailScreen(masjidId: state.pathParameters['id']!),
       ),
-      GoRoute(path: '/saved', builder: (context, state) => const SavedScreen()),
+      GoRoute(
+        path: '/announcement/:id',
+        builder: (context, state) {
+          final id = state.pathParameters['id']!;
+          return AnnouncementDetailScreen(announcementId: id);
+        },
+      ),
       GoRoute(path: '/settings', builder: (context, state) => const SettingsScreen()),
       
       // Admin Portal Routes

@@ -7,4 +7,8 @@ abstract class IAnnouncementsService {
   Future<void> reportAnnouncement(String announcementId, String uid);
   Future<void> createAnnouncement(Announcement announcement);
   Future<void> updateAnnouncement(Announcement announcement);
+  Future<void> deleteAnnouncement(String announcementId);
+  Future<List<Announcement>> getAnnouncementsByAdmin(String adminId);
+  Future<Announcement?> getAnnouncementById(String id);
 }
+

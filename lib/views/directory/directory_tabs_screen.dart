@@ -106,7 +106,7 @@ class _DirectoryTabsScreenState extends ConsumerState<DirectoryTabsScreen> with 
                       itemCount: filtered.length,
                       itemBuilder: (context, index) {
                         final m = filtered[index];
-                        final isFollowing = prefs.followedMasjids.contains(m.id);
+                        final isFollowing = ref.watch(isFollowingMasjidProvider(m.id));
                         
                         return Card(
                           color: isDark ? AppColors.surfaceDark : Colors.white,
@@ -232,40 +232,6 @@ class _DirectoryTabsScreenState extends ConsumerState<DirectoryTabsScreen> with 
             ),
           ),
         ],
-      ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: 1,
-        type: BottomNavigationBarType.fixed,
-        selectedItemColor: AppColors.accentGold,
-        unselectedItemColor: isDark ? Colors.white60 : Colors.black54,
-        backgroundColor: isDark ? AppColors.surfaceDark : Colors.white,
-        items: [
-          BottomNavigationBarItem(
-            icon: const Icon(Icons.home),
-            label: lang == 'ur' ? 'ہوم' : 'Home',
-          ),
-          BottomNavigationBarItem(
-            icon: const Icon(Icons.explore),
-            label: lang == 'ur' ? 'ڈائریکٹری' : 'Explore',
-          ),
-          BottomNavigationBarItem(
-            icon: const Icon(Icons.bookmark),
-            label: getTranslation(lang, 'savedAnnouncements'),
-          ),
-          BottomNavigationBarItem(
-            icon: const Icon(Icons.person),
-            label: lang == 'ur' ? 'ایڈمن' : 'Admin',
-          ),
-        ],
-        onTap: (index) {
-          if (index == 0) {
-            context.go('/feed');
-          } else if (index == 2) {
-            context.push('/saved');
-          } else if (index == 3) {
-            context.push('/admin');
-          }
-        },
       ),
     );
   }

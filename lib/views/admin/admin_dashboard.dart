@@ -7,7 +7,9 @@ import '../../constants/colors.dart';
 import '../../providers/locale_provider.dart';
 import '../../providers/admin_provider.dart';
 import '../../models/announcement.dart';
-import '../../services/mock/mock_data.dart';
+import '../../models/masjid.dart';
+import '../../models/scholar.dart';
+import '../../services/service_locator.dart';
 import '../feed/widgets/announcement_card.dart';
 
 class AdminDashboard extends ConsumerWidget {
@@ -54,242 +56,260 @@ class AdminDashboard extends ConsumerWidget {
       );
     }
 
-    // Load statistics in-memory
     final cityId = adminState.cityId!;
-    final totalAnnouncements = MockData.announcements.where((a) => a['cityId'] == cityId && a['postedBy'] == adminState.adminId).length;
-    final masjidsCount = MockData.masjids.where((m) => m['cityId'] == cityId).length;
-    final scholarsCount = MockData.scholars.where((s) => s['cityId'] == cityId).length;
 
-    // Filter announcements posted by this admin
-    final myAnnouncements = MockData.announcements
-        .where((a) => a['postedBy'] == adminState.adminId)
-        .map((a) => Announcement.fromMockMap(a))
-        .toList();
+    return FutureBuilder<List<dynamic>>(
+      future: Future.wait([
+        announcementsService.getAnnouncementsByAdmin(adminState.adminId!),
+        masjidsService.getMasjids(cityId),
+        scholarsService.getScholars(cityId),
+      ]),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+        if (snapshot.hasError) {
+          return Scaffold(
+            body: Center(child: Text('Error loading dashboard: ${snapshot.error}')),
+          );
+        }
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(lang == 'ur' ? 'ایڈمن ڈیش بورڈ' : 'Admin Panel'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () {
-              ref.read(adminProvider.notifier).logout();
-              context.go('/settings');
-            },
+        final myAnnouncements = snapshot.data![0] as List<Announcement>;
+        final masjidsList = snapshot.data![1] as List<Masjid>;
+        final scholarsList = snapshot.data![2] as List<Scholar>;
+
+        final totalAnnouncements = myAnnouncements.length;
+        final masjidsCount = masjidsList.length;
+        final scholarsCount = scholarsList.length;
+
+        return Scaffold(
+          appBar: AppBar(
+            title: Text(lang == 'ur' ? 'ایڈمن ڈیش بورڈ' : 'Admin Panel'),
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.logout),
+                onPressed: () {
+                  ref.read(adminProvider.notifier).logout();
+                  context.go('/settings');
+                },
+              ),
+            ],
           ),
-        ],
-      ),
-      body: CustomScrollView(
-        slivers: [
-          // 1. Welcome Card
-          SliverToBoxAdapter(
-            child: Container(
-              padding: const EdgeInsets.all(24),
-              color: isDark ? AppColors.surfaceDark : AppColors.primaryEmerald.withOpacity(0.04),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Assalamu Alaikum,',
-                    style: TextStyle(fontSize: 14, color: isDark ? Colors.white70 : AppColors.primaryEmerald),
+          body: CustomScrollView(
+            slivers: [
+              // 1. Welcome Card
+              SliverToBoxAdapter(
+                child: Container(
+                  padding: const EdgeInsets.all(24),
+                  color: isDark ? AppColors.surfaceDark : AppColors.primaryEmerald.withOpacity(0.04),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Assalamu Alaikum,',
+                        style: TextStyle(fontSize: 14, color: isDark ? Colors.white70 : AppColors.primaryEmerald),
+                      ),
+                      Text(
+                        adminState.adminName!,
+                        style: GoogleFonts.cormorantGaramond(
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.accentGold,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Masjid Coordinator for ${cityId.split('_').first.toUpperCase()}',
+                        style: const TextStyle(fontSize: 12, color: Colors.grey),
+                      ),
+                    ],
                   ),
-                  Text(
-                    adminState.adminName!,
+                ),
+              ),
+
+              // 2. Stats Grid
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Row(
+                    children: [
+                      _statsCard('My Posts', totalAnnouncements.toString(), isDark),
+                      const SizedBox(width: 12),
+                      _statsCard('Scholars', scholarsCount.toString(), isDark),
+                      const SizedBox(width: 12),
+                      _statsCard('Masjids', masjidsCount.toString(), isDark),
+                    ],
+                  ),
+                ),
+              ),
+
+              // 3. Quick Action Cards
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('QUICK ACTIONS', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey)),
+                      const SizedBox(height: 8),
+                      
+                      _actionTile(Icons.campaign, 'Post Announcement', 'Publish a new bayan or program details', () => context.push('/admin/post')),
+                      _actionTile(Icons.school, 'Add Scholar', 'Register a new scholar in the directory', () => context.push('/admin/add-scholar')),
+                      _actionTile(Icons.mosque, 'Add Masjid', 'Register a new masjid in the directory', () => context.push('/admin/add-masjid')),
+                      _actionTile(Icons.people, 'Manage Admin Team', 'Invite or manage city co-admins (Max 10)', () => context.push('/admin/team')),
+                    ],
+                  ),
+                ),
+              ),
+
+              // 4. Section Header: My Posts
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.only(left: 16, right: 16, top: 24, bottom: 8),
+                  child: Text(
+                    'MY ANNOUNCEMENTS',
                     style: GoogleFonts.cormorantGaramond(
-                      fontSize: 28,
+                      fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      color: AppColors.accentGold,
+                      color: isDark ? AppColors.accentGold : AppColors.primaryEmerald,
                     ),
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Masjid Coordinator for ${cityId.split('_').first.toUpperCase()}',
-                    style: const TextStyle(fontSize: 12, color: Colors.grey),
-                  ),
-                ],
-              ),
-            ),
-          ),
-
-          // 2. Stats Grid
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Row(
-                children: [
-                  _statsCard('My Posts', totalAnnouncements.toString(), isDark),
-                  const SizedBox(width: 12),
-                  _statsCard('Scholars', scholarsCount.toString(), isDark),
-                  const SizedBox(width: 12),
-                  _statsCard('Masjids', masjidsCount.toString(), isDark),
-                ],
-              ),
-            ),
-          ),
-
-          // 3. Quick Action Cards
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('QUICK ACTIONS', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey)),
-                  const SizedBox(height: 8),
-                  
-                  _actionTile(Icons.campaign, 'Post Announcement', 'Publish a new bayan or program details', () => context.push('/admin/post')),
-                  _actionTile(Icons.school, 'Add Scholar', 'Register a new scholar in the directory', () => context.push('/admin/add-scholar')),
-                  _actionTile(Icons.mosque, 'Add Masjid', 'Register a new masjid in the directory', () => context.push('/admin/add-masjid')),
-                  _actionTile(Icons.people, 'Manage Admin Team', 'Invite or manage city co-admins (Max 10)', () => context.push('/admin/team')),
-                ],
-              ),
-            ),
-          ),
-
-          // 4. Section Header: My Posts
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.only(left: 16, right: 16, top: 24, bottom: 8),
-              child: Text(
-                'MY ANNOUNCEMENTS',
-                style: GoogleFonts.cormorantGaramond(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: isDark ? AppColors.accentGold : AppColors.primaryEmerald,
                 ),
               ),
-            ),
-          ),
 
-          // 5. My Posts list
-          if (myAnnouncements.isEmpty)
-            const SliverToBoxAdapter(
-              child: Padding(
-                padding: EdgeInsets.all(32.0),
-                child: Center(
-                  child: Text('You have not posted any announcements yet.', style: TextStyle(color: Colors.grey)),
-                ),
-              ),
-            )
-          else
-            SliverList(
-              delegate: SliverChildBuilderDelegate(
-                (context, index) {
-                  final a = myAnnouncements[index];
-                  final timeSinceCreated = DateTime.now().difference(a.createdAt);
-                  final isEditable = timeSinceCreated.inMinutes < 15;
-
-                  return Card(
-                    elevation: 0,
-                    margin: const EdgeInsets.only(bottom: 12, left: 12, right: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      side: BorderSide(color: isDark ? Colors.white10 : Colors.black12),
+              // 5. My Posts list
+              if (myAnnouncements.isEmpty)
+                const SliverToBoxAdapter(
+                  child: Padding(
+                    padding: EdgeInsets.all(32.0),
+                    child: Center(
+                      child: Text('You have not posted any announcements yet.', style: TextStyle(color: Colors.grey)),
                     ),
-                    clipBehavior: Clip.antiAlias,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Stack(
+                  ),
+                )
+              else
+                SliverList(
+                  delegate: SliverChildBuilderDelegate(
+                    (context, index) {
+                      final a = myAnnouncements[index];
+                      final timeSinceCreated = DateTime.now().difference(a.createdAt);
+                      final isEditable = timeSinceCreated.inMinutes < 15;
+
+                      return Card(
+                        elevation: 0,
+                        margin: const EdgeInsets.only(bottom: 12, left: 12, right: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          side: BorderSide(color: isDark ? Colors.white10 : Colors.black12),
+                        ),
+                        clipBehavior: Clip.antiAlias,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            AnnouncementCard(announcement: a),
-                            
-                            Positioned(
-                              top: 16,
-                              right: 24,
-                              child: isEditable
-                                  ? InkWell(
-                                      onTap: () => context.push('/admin/post', extra: a),
-                                      child: Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                        decoration: BoxDecoration(
-                                          color: AppColors.primaryEmerald,
-                                          borderRadius: BorderRadius.circular(4),
-                                          boxShadow: [
-                                            BoxShadow(
-                                              color: Colors.black.withOpacity(0.1),
-                                              blurRadius: 2,
-                                              offset: const Offset(0, 1),
+                            Stack(
+                              children: [
+                                AnnouncementCard(announcement: a),
+                                
+                                Positioned(
+                                  top: 16,
+                                  right: 24,
+                                  child: isEditable
+                                      ? InkWell(
+                                          onTap: () => context.push('/admin/post', extra: a),
+                                          child: Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                            decoration: BoxDecoration(
+                                              color: AppColors.primaryEmerald,
+                                              borderRadius: BorderRadius.circular(4),
+                                              boxShadow: [
+                                                BoxShadow(
+                                                  color: Colors.black.withOpacity(0.1),
+                                                  blurRadius: 2,
+                                                  offset: const Offset(0, 1),
+                                                ),
+                                              ],
                                             ),
-                                          ],
-                                        ),
-                                        child: const Row(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            Icon(Icons.edit, color: Colors.white, size: 10),
-                                            SizedBox(width: 4),
-                                            Text(
-                                              'EDIT',
-                                              style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold),
+                                            child: const Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                Icon(Icons.edit, color: Colors.white, size: 10),
+                                                SizedBox(width: 4),
+                                                Text(
+                                                  'EDIT',
+                                                  style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold),
+                                                ),
+                                              ],
                                             ),
-                                          ],
-                                        ),
-                                      ),
-                                    )
-                                  : Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                      decoration: BoxDecoration(
-                                        color: Colors.grey.withOpacity(0.15),
-                                        borderRadius: BorderRadius.circular(4),
-                                      ),
-                                      child: const Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          Icon(Icons.lock_outline, color: Colors.grey, size: 10),
-                                          SizedBox(width: 4),
-                                          Text(
-                                            'LOCKED',
-                                            style: TextStyle(color: Colors.grey, fontSize: 9, fontWeight: FontWeight.bold),
                                           ),
-                                        ],
+                                        )
+                                      : Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                          decoration: BoxDecoration(
+                                            color: Colors.grey.withOpacity(0.15),
+                                            borderRadius: BorderRadius.circular(4),
+                                          ),
+                                          child: const Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Icon(Icons.lock_outline, color: Colors.grey, size: 10),
+                                              SizedBox(width: 4),
+                                              Text(
+                                                'LOCKED',
+                                                style: TextStyle(color: Colors.grey, fontSize: 9, fontWeight: FontWeight.bold),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                ),
+                              ],
+                            ),
+                            
+                            // Delivery stats row (Blueprint requirement)
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                              color: isDark ? Colors.white.withOpacity(0.02) : Colors.grey.withOpacity(0.04),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Row(
+                                    children: [
+                                      const Icon(Icons.send_rounded, size: 12, color: Colors.grey),
+                                      const SizedBox(width: 6),
+                                      Text(
+                                        a.notificationSentInitial 
+                                            ? 'Sent to followers (100% delivered)' 
+                                            : 'Queued to send on publish',
+                                        style: const TextStyle(fontSize: 11, color: Colors.grey),
                                       ),
-                                    ),
+                                    ],
+                                  ),
+                                  Row(
+                                    children: [
+                                      const Icon(Icons.mark_email_read_outlined, size: 12, color: AppColors.accentGold),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        a.notificationSentInitial ? 'Delivered: 124' : 'Pending',
+                                        style: const TextStyle(fontSize: 11, color: AppColors.accentGold, fontWeight: FontWeight.bold),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
                             ),
                           ],
                         ),
-                        
-                        // Delivery stats row (Blueprint requirement)
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                          color: isDark ? Colors.white.withOpacity(0.02) : Colors.grey.withOpacity(0.04),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Row(
-                                children: [
-                                  const Icon(Icons.send_rounded, size: 12, color: Colors.grey),
-                                  const SizedBox(width: 6),
-                                  Text(
-                                    a.notificationSentInitial 
-                                        ? 'Sent to followers (100% delivered)' 
-                                        : 'Queued to send on publish',
-                                    style: const TextStyle(fontSize: 11, color: Colors.grey),
-                                  ),
-                                ],
-                              ),
-                              Row(
-                                children: [
-                                  const Icon(Icons.mark_email_read_outlined, size: 12, color: AppColors.accentGold),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    a.notificationSentInitial ? 'Delivered: 124' : 'Pending',
-                                    style: const TextStyle(fontSize: 11, color: AppColors.accentGold, fontWeight: FontWeight.bold),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                },
-                childCount: myAnnouncements.length,
-              ),
-            ),
-          const SliverToBoxAdapter(child: SizedBox(height: 32)),
-        ],
-      ),
+                      );
+                    },
+                    childCount: myAnnouncements.length,
+                  ),
+                ),
+              const SliverToBoxAdapter(child: SizedBox(height: 32)),
+            ],
+          ),
+        );
+      },
     );
   }
 

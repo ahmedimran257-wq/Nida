@@ -109,6 +109,37 @@ class MockAnnouncementsService implements IAnnouncementsService {
       _notifyListeners(announcement.cityId, announcement.masjidId);
     }
   }
+
+  @override
+  Future<void> deleteAnnouncement(String announcementId) async {
+    await Future.delayed(const Duration(milliseconds: 200));
+    final idx = MockData.announcements.indexWhere((a) => a['id'] == announcementId);
+    if (idx != -1) {
+      final cityId = MockData.announcements[idx]['cityId'] as String;
+      final masjidId = MockData.announcements[idx]['masjidId'] as String?;
+      MockData.announcements.removeAt(idx);
+      _notifyListeners(cityId, masjidId);
+    }
+  }
+
+  @override
+  Future<List<Announcement>> getAnnouncementsByAdmin(String adminId) async {
+    await Future.delayed(const Duration(milliseconds: 150));
+    return MockData.announcements
+        .where((a) => a['postedBy'] == adminId)
+        .map((a) => Announcement.fromMockMap(a))
+        .toList();
+  }
+
+  @override
+  Future<Announcement?> getAnnouncementById(String id) async {
+    await Future.delayed(const Duration(milliseconds: 100));
+    final idx = MockData.announcements.indexWhere((a) => a['id'] == id);
+    if (idx != -1) {
+      return Announcement.fromMockMap(MockData.announcements[idx]);
+    }
+    return null;
+  }
 }
 // Stub constant to replace missing reference
 const int ShortIntMax = 32767;

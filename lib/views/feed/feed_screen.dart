@@ -248,40 +248,6 @@ class _FeedScreenState extends ConsumerState<FeedScreen> with SingleTickerProvid
           ),
         ],
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: 0,
-        type: BottomNavigationBarType.fixed,
-        selectedItemColor: AppColors.accentGold,
-        unselectedItemColor: isDark ? Colors.white60 : Colors.black54,
-        backgroundColor: isDark ? AppColors.surfaceDark : Colors.white,
-        items: [
-          BottomNavigationBarItem(
-            icon: const Icon(Icons.home),
-            label: lang == 'ur' ? 'ہوم' : 'Home',
-          ),
-          BottomNavigationBarItem(
-            icon: const Icon(Icons.explore),
-            label: lang == 'ur' ? 'ڈائریکٹری' : 'Explore',
-          ),
-          BottomNavigationBarItem(
-            icon: const Icon(Icons.bookmark),
-            label: getTranslation(lang, 'savedAnnouncements'),
-          ),
-          BottomNavigationBarItem(
-            icon: const Icon(Icons.person),
-            label: lang == 'ur' ? 'ایڈمن' : 'Admin',
-          ),
-        ],
-        onTap: (index) {
-          if (index == 1) {
-            context.push('/directory');
-          } else if (index == 2) {
-            context.push('/saved');
-          } else if (index == 3) {
-            context.push('/admin');
-          }
-        },
-      ),
     );
   }
 

@@ -33,4 +33,23 @@ class MockScholarsService implements IScholarsService {
     MockData.scholars.add(scholar.toMap()..['id'] = scholar.id);
     _notifyListeners(scholar.cityId);
   }
+
+  @override
+  Future<void> updateScholar(Scholar scholar) async {
+    await Future.delayed(const Duration(milliseconds: 200));
+    final idx = MockData.scholars.indexWhere((s) => s['id'] == scholar.id);
+    if (idx != -1) {
+      MockData.scholars[idx] = scholar.toMap()..['id'] = scholar.id;
+      _notifyListeners(scholar.cityId);
+    }
+  }
+
+  @override
+  Future<List<Scholar>> getScholars(String cityId) async {
+    await Future.delayed(const Duration(milliseconds: 150));
+    return MockData.scholars
+        .where((s) => s['cityId'] == cityId && (s['isActive'] as bool? ?? true))
+        .map((s) => Scholar.fromMap(s, s['id'] as String))
+        .toList();
+  }
 }

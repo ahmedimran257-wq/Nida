@@ -1,4 +1,6 @@
+import '../../models/announcement.dart';
 import '../interfaces/saved_interface.dart';
+import 'mock_data.dart';
 
 class MockSavedService implements ISavedService {
   // Local cache of saved announcement IDs per user UID
@@ -35,5 +37,14 @@ class MockSavedService implements ISavedService {
   @override
   Future<List<String>> getSavedAnnouncementIds(String uid) async {
     return _userSaved[uid] ?? [];
+  }
+
+  @override
+  Future<List<Announcement>> getSavedAnnouncements(List<String> ids) async {
+    await Future.delayed(const Duration(milliseconds: 150));
+    return MockData.announcements
+        .where((a) => ids.contains(a['id']))
+        .map((a) => Announcement.fromMockMap(a))
+        .toList();
   }
 }

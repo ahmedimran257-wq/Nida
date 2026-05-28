@@ -11,7 +11,10 @@ import '../../../providers/locale_provider.dart';
 import '../../../providers/preferences_provider.dart';
 import '../../../services/location/prayer_times_calculator.dart';
 import '../../../services/service_locator.dart';
+import '../../../services/reminder_service.dart';
 import '../../../utils/arabic_numbers.dart';
+import '../../announcement/announcement_detail_sheet.dart';
+import 'package:share_plus/share_plus.dart';
 
 class AnnouncementCard extends ConsumerStatefulWidget {
   final Announcement announcement;
@@ -104,68 +107,136 @@ class _AnnouncementCardState extends ConsumerState<AnnouncementCard> {
   }
 
   void _handleShare() {
-    final link = 'nidaapp.app/a/${widget.announcement.id}';
-    
-    // Native share simulation drawer
-    showModalBottomSheet(
+    final lang = ref.read(localeProvider).languageCode;
+    Share.share(
+      'Join us for ${widget.announcement.title}\n'
+      'Scholar: ${lang == 'ur' || lang == 'ar' ? widget.announcement.scholarNameArabicSnapshot : widget.announcement.scholarNameSnapshot}\n'
+      'Masjid: ${widget.announcement.masjidNameSnapshot} (${widget.announcement.masjidLocalitySnapshot})\n'
+      'Link: nidaapp.app/a/${widget.announcement.id}',
+    );
+  }
+
+  void _handleReport() async {
+    final lang = ref.read(localeProvider).languageCode;
+    showDialog(
       context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
       builder: (context) {
-        final lang = ref.read(localeProvider).languageCode;
-        return Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
+        return AlertDialog(
+          backgroundColor: Theme.of(context).brightness == Brightness.dark
+              ? AppColors.surfaceDark
+              : Colors.white,
+          title: Text(lang == 'ur' ? 'رپورٹ کریں' : 'Report Announcement'),
+          content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(
-                lang == 'ur' ? 'شیئر کریں' : 'Share Announcement',
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-              ),
-              const SizedBox(height: 16),
               ListTile(
-                leading: const Icon(Icons.copy, color: AppColors.accentGold),
-                title: Text(lang == 'ur' ? 'لنک کاپی کریں' : 'Copy Link'),
-                subtitle: Text(link),
-                onTap: () {
-                  // Clipboard action simulation
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(lang == 'ur' ? 'لنک کاپی ہو گیا!' : 'Link copied to clipboard!')),
-                  );
-                  Navigator.pop(context);
-                },
+                title: Text(lang == 'ur' ? 'غلط معلومات' : 'Incorrect Information'),
+                onTap: () => Navigator.pop(context, 'wrong'),
               ),
               ListTile(
-                leading: const Icon(Icons.message, color: Colors.green),
-                title: Text(lang == 'ur' ? 'واٹس ایپ پر شیئر کریں' : 'Share to WhatsApp'),
-                onTap: () {
-                  Navigator.pop(context);
-                },
+                title: Text(lang == 'ur' ? 'سپیم / اشتہار' : 'Spam / Advertisement'),
+                onTap: () => Navigator.pop(context, 'spam'),
+              ),
+              ListTile(
+                title: Text(lang == 'ur' ? 'نا مناسب مواد' : 'Offensive Content'),
+                onTap: () => Navigator.pop(context, 'offensive'),
               ),
             ],
           ),
         );
       },
-    );
+    ).then((reason) async {
+      if (reason != null && mounted) {
+        final prefs = ref.read(preferencesProvider);
+        final uid = prefs.anonymousUid;
+        await announcementsService.reportAnnouncement(widget.announcement.id, uid);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                lang == 'ur' ? 'شکریہ، آپ کی رپورٹ موصول ہو گئی۔' : 'Report submitted. Thank you for keeping NIDA safe.',
+              ),
+              backgroundColor: AppColors.success,
+            ),
+          );
+        }
+      }
+    });
   }
 
-  void _handleReport() async {
-    final prefs = ref.read(preferencesProvider);
-    final uid = prefs.anonymousUid;
+  void _handleSetReminder() async {
     final lang = ref.read(localeProvider).languageCode;
-
-    await announcementsService.reportAnnouncement(widget.announcement.id, uid);
     
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            lang == 'ur' ? 'شکریہ، آپ کی رپورٹ موصول ہو گئی۔' : 'Report submitted. Thank you for keeping NIDA safe.',
+    showDialog<int>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: Theme.of(context).brightness == Brightness.dark
+              ? AppColors.surfaceDark
+              : Colors.white,
+          title: Text(lang == 'ur' ? 'یاد دہانی ترتیب دیں' : 'Set Reminder'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.alarm, color: AppColors.accentGold),
+                title: Text(lang == 'ur' ? '15 منٹ پہلے' : '15 minutes before'),
+                onTap: () => Navigator.pop(context, 15),
+              ),
+              ListTile(
+                leading: const Icon(Icons.alarm, color: AppColors.accentGold),
+                title: Text(lang == 'ur' ? '30 منٹ پہلے' : '30 minutes before'),
+                onTap: () => Navigator.pop(context, 30),
+              ),
+              ListTile(
+                leading: const Icon(Icons.alarm, color: AppColors.accentGold),
+                title: Text(lang == 'ur' ? '1 گھنٹہ پہلے' : '1 hour before'),
+                onTap: () => Navigator.pop(context, 60),
+              ),
+              ListTile(
+                leading: const Icon(Icons.alarm, color: AppColors.accentGold),
+                title: Text(lang == 'ur' ? '1 دن پہلے' : '1 day before'),
+                onTap: () => Navigator.pop(context, 1440),
+              ),
+              const Divider(),
+              ListTile(
+                leading: const Icon(Icons.notifications_off, color: Colors.grey),
+                title: Text(lang == 'ur' ? 'منسوخ کریں' : 'Cancel Reminder'),
+                onTap: () => Navigator.pop(context, -1),
+              ),
+            ],
           ),
-        ),
-      );
-    }
+        );
+      },
+    ).then((minutes) async {
+      if (minutes != null) {
+        if (minutes == -1) {
+          await ReminderService.cancelReminder(widget.announcement.id);
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(lang == 'ur' ? 'یاد دہانی منسوخ کر دی گئی۔' : 'Reminder cancelled.')),
+            );
+          }
+        } else {
+          await ReminderService.scheduleReminder(
+            announcement: widget.announcement,
+            minutesBefore: minutes,
+          );
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  lang == 'ur'
+                      ? 'یاد دہانی $minutes منٹ پہلے کے لیے ترتیب دی گئی ہے۔'
+                      : 'Reminder scheduled $minutes minutes before the program.',
+                ),
+                backgroundColor: AppColors.success,
+              ),
+            );
+          }
+        }
+      }
+    });
   }
 
   @override
@@ -199,7 +270,17 @@ class _AnnouncementCardState extends ConsumerState<AnnouncementCard> {
             side: BorderSide(color: isDark ? Colors.white10 : Colors.black12, width: 1),
           ),
           margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          child: IntrinsicHeight(
+          child: InkWell(
+            borderRadius: BorderRadius.circular(16),
+            onTap: () {
+              showModalBottomSheet(
+                context: context,
+                isScrollControlled: true,
+                backgroundColor: Colors.transparent,
+                builder: (_) => AnnouncementDetailSheet(announcement: widget.announcement),
+              );
+            },
+            child: IntrinsicHeight(
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -412,6 +493,15 @@ class _AnnouncementCardState extends ConsumerState<AnnouncementCard> {
                               constraints: const BoxConstraints(),
                               onPressed: _handleBookmark,
                             ),
+                            if (isSaved) ...[
+                              const SizedBox(width: 16),
+                              IconButton(
+                                icon: const Icon(Icons.notifications_active_outlined, color: AppColors.accentGold, size: 20),
+                                padding: EdgeInsets.zero,
+                                constraints: const BoxConstraints(),
+                                onPressed: _handleSetReminder,
+                              ),
+                            ],
                             const SizedBox(width: 16),
                             IconButton(
                               icon: const Icon(Icons.share_outlined, color: Colors.grey, size: 20),
@@ -427,6 +517,7 @@ class _AnnouncementCardState extends ConsumerState<AnnouncementCard> {
                 ),
               ],
             ),
+          ),
           ),
         );
       },

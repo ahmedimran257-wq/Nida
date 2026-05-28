@@ -28,7 +28,7 @@ class MasjidDetailScreen extends ConsumerWidget {
     final masjidsAsync = ref.watch(masjidsProvider(cityId));
     final masjidAnnouncementsStream = ref.watch(activeAnnouncementsProvider(cityId));
     
-    final isFollowing = prefs.followedMasjids.contains(masjidId);
+    final isFollowing = ref.watch(isFollowingMasjidProvider(masjidId));
 
     return Scaffold(
       appBar: AppBar(

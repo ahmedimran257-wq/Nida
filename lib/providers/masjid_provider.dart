@@ -45,3 +45,10 @@ class MasjidFollowAction {
 final masjidFollowActionProvider = Provider<MasjidFollowAction>((ref) {
   return MasjidFollowAction(ref);
 });
+
+final isFollowingMasjidProvider = Provider.family<bool, String>((ref, masjidId) {
+  final prefs = ref.watch(preferencesProvider);
+  // NOTE: In mock mode this is backed by preferencesProvider local list cache.
+  // When live Firebase is wired, this should sync with/read from firestore users/{uid}/follows subcollection.
+  return prefs.followedMasjids.contains(masjidId);
+});

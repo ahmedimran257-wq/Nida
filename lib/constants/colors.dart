@@ -4,14 +4,17 @@ class AppColors {
   // Brand Colors
   static const Color primaryEmerald = Color(0xFF0A382C);
   static const Color primaryEmeraldLight = Color(0xFF1B5E4F);
-  static const Color accentGold = Color(0xFFD4AF37);
-  static const Color accentGoldLight = Color(0xFFF3E5AB);
+  static const Color accentGold = Color(0xFFC9A96E); // Antique gold
+  static const Color accentGoldLight = Color(0xFFE8DCC4);
   
   // Backgrounds
   static const Color backgroundLight = Color(0xFFF9FBF9);
   static const Color surfaceLight = Colors.white;
-  static const Color backgroundDark = Color(0xFF0F1412);
-  static const Color surfaceDark = Color(0xFF161D1A);
+  static const Color backgroundDark = Color(0xFF07070F); // Near-black / ink blue-black
+  static const Color surfaceDark = Color(0xFF0F0F1C); // Dark surface 1
+  static const Color surfaceDarkMedium = Color(0xFF161626); // Surface 2
+  static const Color surfaceDarkHigh = Color(0xFF1E1E32); // Surface 3
+  static const Color goldBorder = Color(0x2EC9A96E);
   
   // Ramadan Mode Colors
   static const Color ramadanAmber = Color(0xFFFF8C00);

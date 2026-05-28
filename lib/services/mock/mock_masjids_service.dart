@@ -66,4 +66,23 @@ class MockMasjidsService implements IMasjidsService {
     MockData.masjids.add(masjid.toMap()..['id'] = masjid.id);
     _notifyListeners(masjid.cityId);
   }
+
+  @override
+  Future<void> updateMasjid(Masjid masjid) async {
+    await Future.delayed(const Duration(milliseconds: 200));
+    final idx = MockData.masjids.indexWhere((m) => m['id'] == masjid.id);
+    if (idx != -1) {
+      MockData.masjids[idx] = masjid.toMap()..['id'] = masjid.id;
+      _notifyListeners(masjid.cityId);
+    }
+  }
+
+  @override
+  Future<List<Masjid>> getMasjids(String cityId) async {
+    await Future.delayed(const Duration(milliseconds: 150));
+    return MockData.masjids
+        .where((m) => m['cityId'] == cityId && (m['isActive'] as bool? ?? true))
+        .map((m) => Masjid.fromMap(m, m['id'] as String))
+        .toList();
+  }
 }
