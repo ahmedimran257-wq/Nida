@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -304,13 +305,17 @@ class _AnnouncementCardState extends ConsumerState<AnnouncementCard> {
                     ),
                     child: Stack(
                       children: [
-                        // Background custom geometric painter
+                        // Background custom geometric painter or selected poster image
                         Positioned.fill(
-                          child: CustomPaint(
-                            painter: GeometricStarPainter(
-                              color: AppColors.accentGold.withOpacity(0.2),
-                            ),
-                          ),
+                          child: widget.announcement.posterUrl != null
+                              ? (widget.announcement.posterUrl!.startsWith('http')
+                                  ? Image.network(widget.announcement.posterUrl!, fit: BoxFit.cover)
+                                  : Image.file(File(widget.announcement.posterUrl!), fit: BoxFit.cover))
+                              : CustomPaint(
+                                  painter: GeometricStarPainter(
+                                    color: AppColors.accentGold.withOpacity(0.2),
+                                  ),
+                                ),
                         ),
                         // Program Type badge on top left
                         Positioned(

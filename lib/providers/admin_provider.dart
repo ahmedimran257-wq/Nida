@@ -96,58 +96,22 @@ class AdminNotifier extends StateNotifier<AdminState> {
   // Invite new Admin
   Future<String?> inviteAdmin(String name, String phone) async {
     if (!state.isLoggedIn) return 'Not authenticated';
-    
-    // Count active admins in city
-    final cityAdmins = MockData.imamAdmins.where((a) => a['cityId'] == state.cityId && a['isActive'] == true).length;
-    if (cityAdmins >= 10) {
-      return 'Admin limit reached. Contact the app owner.';
-    }
-
-    final hashed = MockData.hashPhone(phone);
-    final exists = MockData.imamAdmins.any((a) => a['phone'] == hashed);
-    if (exists) {
-      return 'Admin phone number already registered.';
-    }
-
-    // Add to pending admins in mock and directly create active admin for simulation ease
-    MockData.imamAdmins.add({
-      'id': 'admin_00${MockData.imamAdmins.length + 1}',
-      'name': name,
-      'phone': hashed,
-      'phoneDisplay': '****${phone.substring(phone.length - 4)}',
-      'cityId': state.cityId!,
-      'addedBy': state.adminId!,
-      'addedVia': 'whatsapp_model',
-      'isActive': true,
-      'announcementsPosted': 0,
-      'createdAt': DateTime.now(),
-    });
-
-    return null; // success
+    return adminsService.inviteAdmin(
+      name: name,
+      phone: phone,
+      cityId: state.cityId!,
+      addedBy: state.adminId!,
+    );
   }
 
   // Soft Deactivate Admin (slots bottleneck fix)
   Future<String?> softDeactivateAdmin(String targetAdminId) async {
     if (!state.isLoggedIn) return 'Not authenticated';
     if (targetAdminId == state.adminId) return 'Cannot deactivate yourself.';
-
-    final idx = MockData.imamAdmins.indexWhere((a) => a['id'] == targetAdminId);
-    if (idx == -1) return 'Admin not found.';
-
-    final target = MockData.imamAdmins[idx];
-    
-    // Check condition: Must have 2+ active admins remaining in city
-    final cityAdminsCount = MockData.imamAdmins.where((a) => a['cityId'] == state.cityId && a['isActive'] == true).length;
-    if (cityAdminsCount <= 2) {
-      return 'Cannot deactivate. Minimum 2 active admins must remain in the city.';
-    }
-
-    // Deactivate
-    target['isActive'] = false;
-    target['deactivatedBy'] = state.adminId;
-    target['deactivatedAt'] = DateTime.now();
-
-    return null; // success
+    return adminsService.softDeactivateAdmin(
+      adminId: targetAdminId,
+      deactivatedBy: state.adminId!,
+    );
   }
 }
 

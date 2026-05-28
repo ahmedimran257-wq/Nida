@@ -6,6 +6,7 @@ import 'package:uuid/uuid.dart';
 import '../../constants/colors.dart';
 import '../../models/scholar.dart';
 import '../../providers/admin_provider.dart';
+import '../../services/service_locator.dart';
 
 class AddScholarScreen extends ConsumerStatefulWidget {
   const AddScholarScreen({super.key});
@@ -56,6 +57,8 @@ class _AddScholarScreenState extends ConsumerState<AddScholarScreen> {
     setState(() => _isLoading = true);
 
     final admin = ref.read(adminProvider);
+    final city = await citiesService.getCityById(cityId);
+    final countryCode = city?.countryCode ?? 'IN';
 
     final newScholar = Scholar(
       id: const Uuid().v4(),
@@ -65,7 +68,7 @@ class _AddScholarScreenState extends ConsumerState<AddScholarScreen> {
       bio: _bioController.text.trim(),
       addedBy: admin.adminId!,
       cityId: cityId,
-      countryCode: 'IN', // default
+      countryCode: countryCode,
       createdAt: DateTime.now(),
       isActive: true,
       totalPrograms: 0,

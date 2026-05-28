@@ -29,6 +29,14 @@ import 'views/admin/team_management_screen.dart';
 import 'views/shell/main_shell.dart';
 import 'views/announcement/announcement_detail_screen.dart';
 
+// Super Admin Views
+import 'views/superadmin/superadmin_login_screen.dart';
+import 'views/superadmin/superadmin_dashboard.dart';
+import 'views/superadmin/admin_request_detail_screen.dart';
+import 'views/superadmin/city_management_screen.dart';
+import 'views/superadmin/moderation_screen.dart';
+import 'views/superadmin/audit_log_screen.dart';
+
 final _routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
     initialLocation: '/',
@@ -85,6 +93,17 @@ final _routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/admin/add-scholar', builder: (context, state) => const AddScholarScreen()),
       GoRoute(path: '/admin/add-masjid', builder: (context, state) => const AddMasjidScreen()),
       GoRoute(path: '/admin/team', builder: (context, state) => const TeamManagementScreen()),
+
+      // Super Admin Portal Routes
+      GoRoute(path: '/superadmin', builder: (context, state) => const SuperAdminLoginScreen()),
+      GoRoute(path: '/superadmin/dashboard', builder: (context, state) => const SuperAdminDashboard()),
+      GoRoute(
+        path: '/superadmin/requests/:id',
+        builder: (context, state) => AdminRequestDetailScreen(requestId: state.pathParameters['id']!),
+      ),
+      GoRoute(path: '/superadmin/cities', builder: (context, state) => const CityManagementScreen()),
+      GoRoute(path: '/superadmin/moderation', builder: (context, state) => const ModerationScreen()),
+      GoRoute(path: '/superadmin/audit-logs', builder: (context, state) => const AuditLogScreen()),
     ],
   );
 });

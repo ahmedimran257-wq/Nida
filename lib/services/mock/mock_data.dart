@@ -355,10 +355,10 @@ class MockData {
       'countryCode': 'IN',
       'postedBy': 'admin_001',
       'isHidden': false,
-      'isFlaggedForReview': false,
+      'isFlaggedForReview': true,
       'isRecurring': false,
-      'reportCount': 0,
-      'reportedByUids': <String>[],
+      'reportCount': 3,
+      'reportedByUids': <String>['user_001', 'user_002', 'user_003'],
       'notificationSentInitial': false,
       'notificationSentReminder': false,
     },
@@ -392,6 +392,45 @@ class MockData {
   ];
 
   static final List<Map<String, dynamic>> waitlist = [];
+
+  static final List<Map<String, dynamic>> adminRequests = [
+    {
+      'id': 'req_001',
+      'name': 'Imam Farooq',
+      'phone': '+91 98765 43210',
+      'masjidName': 'Masjid Al-Rahman',
+      'cityId': 'kurnool_in',
+      'cityName': 'Kurnool',
+      'countryCode': 'IN',
+      'note': 'I am the khatib at Masjid Al-Rahman, Old Town, Kurnool.',
+      'status': 'pending',
+      'submittedAt': DateTime.now().subtract(const Duration(hours: 3)),
+    },
+    {
+      'id': 'req_002',
+      'name': 'Brother Khalid',
+      'phone': '+44 7700 900123',
+      'masjidName': 'East London Mosque',
+      'cityId': 'london_gb',
+      'cityName': 'London',
+      'countryCode': 'GB',
+      'note': 'We have 3000 worshippers and announce programmes on WhatsApp. NIDA would help us greatly.',
+      'status': 'pending',
+      'submittedAt': DateTime.now().subtract(const Duration(hours: 7)),
+    },
+  ];
+
+  static final List<Map<String, dynamic>> auditLogs = [
+    {
+      'id': 'log_001',
+      'action': 'Platform Init',
+      'performedBy': 'System',
+      'timestamp': DateTime.now().subtract(const Duration(days: 10)),
+    }
+  ];
+
+  static const String superAdminEmail = 'superadmin@nida.app';
+  static const String superAdminPassword = 'nida_super_2024';
 
   static String hashPhone(String phoneNumber) {
     // Normalizes to remove spaces, brackets, hyphens

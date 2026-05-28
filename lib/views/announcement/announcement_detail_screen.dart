@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -253,11 +254,15 @@ class AnnouncementDetailScreen extends ConsumerWidget {
                           child: Stack(
                             children: [
                               Positioned.fill(
-                                child: CustomPaint(
-                                  painter: GeometricStarPainter(
-                                    color: AppColors.accentGold.withOpacity(0.18),
-                                  ),
-                                ),
+                                child: announcement.posterUrl != null
+                                    ? (announcement.posterUrl!.startsWith('http')
+                                        ? Image.network(announcement.posterUrl!, fit: BoxFit.cover)
+                                        : Image.file(File(announcement.posterUrl!), fit: BoxFit.cover))
+                                    : CustomPaint(
+                                        painter: GeometricStarPainter(
+                                          color: AppColors.accentGold.withOpacity(0.18),
+                                        ),
+                                      ),
                               ),
                               Positioned(
                                 top: 16,

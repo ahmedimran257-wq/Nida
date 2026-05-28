@@ -86,6 +86,16 @@ class AdminDashboard extends ConsumerWidget {
 
         return Scaffold(
           appBar: AppBar(
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back),
+              onPressed: () {
+                if (context.canPop()) {
+                  context.pop();
+                } else {
+                  context.go('/settings');
+                }
+              },
+            ),
             title: Text(lang == 'ur' ? 'ایڈمن ڈیش بورڈ' : 'Admin Panel'),
             actions: [
               IconButton(
@@ -144,6 +154,32 @@ class AdminDashboard extends ConsumerWidget {
                   ),
                 ),
               ),
+
+              // Flagged Warning Banner
+              if (myAnnouncements.any((a) => a.isFlaggedForReview))
+                SliverToBoxAdapter(
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: AppColors.error.withOpacity(0.08),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: AppColors.error.withOpacity(0.3)),
+                    ),
+                    child: const Row(
+                      children: [
+                        Icon(Icons.flag_outlined, color: AppColors.error, size: 20),
+                        SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            'One of your announcements has been reported by multiple users. A Super Admin is currently reviewing it.',
+                            style: TextStyle(fontSize: 12, color: AppColors.error),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
 
               // 3. Quick Action Cards
               SliverToBoxAdapter(
@@ -289,6 +325,7 @@ class AdminDashboard extends ConsumerWidget {
                                     children: [
                                       const Icon(Icons.mark_email_read_outlined, size: 12, color: AppColors.accentGold),
                                       const SizedBox(width: 4),
+                                      // FCM Integration Note: Replace hardcoded '124' with actual delivery numbers from Firebase Cloud Messaging analytics in production
                                       Text(
                                         a.notificationSentInitial ? 'Delivered: 124' : 'Pending',
                                         style: const TextStyle(fontSize: 11, color: AppColors.accentGold, fontWeight: FontWeight.bold),

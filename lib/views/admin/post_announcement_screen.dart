@@ -1,6 +1,8 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../constants/colors.dart';
@@ -37,6 +39,8 @@ class _PostAnnouncementScreenState extends ConsumerState<PostAnnouncementScreen>
   bool _isRecurring = false;
   String _recurringRule = 'FREQ=WEEKLY';
   bool _isLoading = false;
+  File? _posterImage;
+  String? _existingPosterUrl;
 
   @override
   void initState() {
@@ -53,7 +57,59 @@ class _PostAnnouncementScreenState extends ConsumerState<PostAnnouncementScreen>
       _scheduledTime = TimeOfDay.fromDateTime(a.scheduledTime);
       _isRecurring = a.isRecurring;
       _recurringRule = a.recurringRule ?? 'FREQ=WEEKLY';
+      _existingPosterUrl = a.posterUrl;
     }
+  }
+
+  Future<void> _pickImage() async {
+    final picked = await ImagePicker().pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 70,
+      maxWidth: 800,
+    );
+    if (picked == null) return;
+    setState(() {
+      _posterImage = File(picked.path);
+      _existingPosterUrl = null;
+    });
+  }
+
+  Widget _buildImagePicker() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return GestureDetector(
+      onTap: _pickImage,
+      child: Container(
+        height: 160,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppColors.accentGold.withOpacity(0.4), width: 1),
+          color: AppColors.primaryEmerald.withOpacity(0.04),
+        ),
+        child: _posterImage != null
+            ? ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: Image.file(_posterImage!, fit: BoxFit.cover, width: double.infinity),
+              )
+            : (_existingPosterUrl != null
+                ? ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: _existingPosterUrl!.startsWith('http')
+                        ? Image.network(_existingPosterUrl!, fit: BoxFit.cover, width: double.infinity)
+                        : Image.file(File(_existingPosterUrl!), fit: BoxFit.cover, width: double.infinity),
+                  )
+                : Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.add_photo_alternate_outlined, color: AppColors.accentGold, size: 32),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Add Poster Image (Optional)',
+                        style: TextStyle(color: isDark ? Colors.white70 : Colors.black54),
+                      ),
+                    ],
+                  )),
+      ),
+    );
   }
 
   @override
@@ -178,6 +234,7 @@ class _PostAnnouncementScreenState extends ConsumerState<PostAnnouncementScreen>
       createdAt: widget.announcement?.createdAt ?? DateTime.now(),
       cityId: cityId,
       countryCode: masjid.countryCode,
+      posterUrl: _posterImage?.path ?? _existingPosterUrl,
       isRecurring: _isRecurring,
       recurringRule: _isRecurring ? _recurringRule : null,
       postedBy: admin.adminId!,
@@ -225,6 +282,8 @@ class _PostAnnouncementScreenState extends ConsumerState<PostAnnouncementScreen>
               child: ListView(
                 padding: const EdgeInsets.all(24.0),
                 children: [
+                  _buildImagePicker(),
+                  const SizedBox(height: 16),
                   // Title
                   TextFormField(
                     controller: _titleController,

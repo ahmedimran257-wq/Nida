@@ -8,6 +8,12 @@ class MockAnnouncementsService implements IAnnouncementsService {
   static final _activeController = StreamController<List<Announcement>>.broadcast();
   static final _masjidControllers = <String, StreamController<List<Announcement>>>{};
 
+  DateTime _parseDate(dynamic val) {
+    if (val is DateTime) return val;
+    if (val is String) return DateTime.parse(val);
+    return DateTime.now();
+  }
+
   void _notifyListeners(String cityId, String? masjidId) {
     // Notify general feed
     final now = DateTime.now();
@@ -15,7 +21,7 @@ class MockAnnouncementsService implements IAnnouncementsService {
         .where((a) =>
             a['cityId'] == cityId &&
             !(a['isHidden'] as bool) &&
-            (a['expiresAt'] as DateTime).isAfter(now))
+            _parseDate(a['expiresAt']).isAfter(now))
         .map((a) => Announcement.fromMockMap(a))
         .toList();
     _activeController.add(active);
@@ -26,7 +32,7 @@ class MockAnnouncementsService implements IAnnouncementsService {
           .where((a) =>
               a['masjidId'] == masjidId &&
               !(a['isHidden'] as bool) &&
-              (a['expiresAt'] as DateTime).isAfter(now))
+              _parseDate(a['expiresAt']).isAfter(now))
           .map((a) => Announcement.fromMockMap(a))
           .toList();
       _masjidControllers[masjidId]?.add(masjidAnnouncements);
@@ -64,7 +70,7 @@ class MockAnnouncementsService implements IAnnouncementsService {
         .where((a) =>
             a['cityId'] == cityId &&
             !(a['isHidden'] as bool) &&
-            (a['expiresAt'] as DateTime).isAfter(now) &&
+            _parseDate(a['expiresAt']).isAfter(now) &&
             ((a['scholarNameSnapshot'] as String? ?? '').toLowerCase().contains(lq) ||
              (a['masjidNameSnapshot'] as String? ?? '').toLowerCase().contains(lq) ||
              (a['title'] as String? ?? '').toLowerCase().contains(lq) ||

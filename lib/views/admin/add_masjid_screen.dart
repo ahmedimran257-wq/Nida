@@ -6,6 +6,7 @@ import 'package:uuid/uuid.dart';
 import '../../constants/colors.dart';
 import '../../models/masjid.dart';
 import '../../providers/admin_provider.dart';
+import '../../services/service_locator.dart';
 
 class AddMasjidScreen extends ConsumerStatefulWidget {
   const AddMasjidScreen({super.key});
@@ -38,6 +39,8 @@ class _AddMasjidScreenState extends ConsumerState<AddMasjidScreen> {
     setState(() => _isLoading = true);
 
     final admin = ref.read(adminProvider);
+    final city = await citiesService.getCityById(cityId);
+    final countryCode = city?.countryCode ?? 'IN';
 
     final newMasjid = Masjid(
       id: const Uuid().v4(),
@@ -46,7 +49,7 @@ class _AddMasjidScreenState extends ConsumerState<AddMasjidScreen> {
       locality: _localityController.text.trim(),
       address: _addressController.text.trim(),
       cityId: cityId,
-      countryCode: 'IN', // default
+      countryCode: countryCode,
       isVerified: true,
       followerCount: 0,
       addedBy: admin.adminId!,

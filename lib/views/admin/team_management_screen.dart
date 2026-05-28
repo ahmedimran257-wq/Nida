@@ -4,7 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../../constants/colors.dart';
 import '../../providers/admin_provider.dart';
-import '../../services/mock/mock_data.dart';
+import '../../services/service_locator.dart';
 
 class TeamManagementScreen extends ConsumerStatefulWidget {
   const TeamManagementScreen({super.key});
@@ -17,6 +17,26 @@ class _TeamManagementScreenState extends ConsumerState<TeamManagementScreen> {
   final _inviteNameController = TextEditingController();
   final _invitePhoneController = TextEditingController();
   bool _isLoading = false;
+  List<Map<String, dynamic>> _team = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadTeam();
+  }
+
+  Future<void> _loadTeam() async {
+    setState(() => _isLoading = true);
+    final adminState = ref.read(adminProvider);
+    final cityId = adminState.cityId ?? 'kurnool_in';
+    final list = await adminsService.getAdminsByCity(cityId);
+    if (mounted) {
+      setState(() {
+        _team = list;
+        _isLoading = false;
+      });
+    }
+  }
 
   @override
   void dispose() {
@@ -83,6 +103,7 @@ class _TeamManagementScreenState extends ConsumerState<TeamManagementScreen> {
                         backgroundColor: AppColors.success,
                       ),
                     );
+                    _loadTeam(); // Reload team
                   }
                 }
               },
@@ -122,6 +143,7 @@ class _TeamManagementScreenState extends ConsumerState<TeamManagementScreen> {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(content: Text('Coordinator deactivated successfully.'), backgroundColor: AppColors.success),
                     );
+                    _loadTeam(); // Reload team
                   }
                 }
               },
@@ -140,8 +162,8 @@ class _TeamManagementScreenState extends ConsumerState<TeamManagementScreen> {
     final adminState = ref.watch(adminProvider);
     final cityId = adminState.cityId ?? 'kurnool_in';
 
-    // Query active coordinators for this city in mock data
-    final team = MockData.imamAdmins.where((a) => a['cityId'] == cityId).toList();
+    // Query active coordinators for this city using loaded team list
+    final team = _team;
     final activeCount = team.where((a) => a['isActive'] == true).length;
 
     return Scaffold(

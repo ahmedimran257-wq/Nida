@@ -8,6 +8,7 @@ import '../../providers/locale_provider.dart';
 import '../../providers/preferences_provider.dart';
 import '../../providers/admin_provider.dart';
 import '../../services/mock/mock_data.dart';
+import '../../services/service_locator.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
@@ -127,19 +128,35 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
             ),
             ElevatedButton(
-              onPressed: () {
-                // Simulate request submission (Entry Point B)
+              onPressed: () async {
+                final name = _regNameController.text.trim();
+                final phone = _regPhoneController.text.trim();
+                final masjid = _regMasjidController.text.trim();
+                final city = _regCityController.text.trim();
+
+                if (name.isEmpty || phone.isEmpty || masjid.isEmpty || city.isEmpty) return;
+
                 Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      lang == 'ur'
-                          ? 'درخواست موصول ہو گئی! ہم جلد ہی تصدیق کے لیے رابطہ کریں گے۔'
-                          : 'Request submitted successfully! We will call you within 24 hours to verify.',
-                    ),
-                    backgroundColor: AppColors.success,
-                  ),
+
+                await adminsService.submitAdminRequest(
+                  name: name,
+                  phone: phone,
+                  masjidName: masjid,
+                  cityName: city,
                 );
+
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        lang == 'ur'
+                            ? 'درخواست موصول ہو گئی! ہم جلد ہی تصدیق کے لیے رابطہ کریں گے۔'
+                            : 'Request submitted successfully! We will call you within 24 hours to verify.',
+                      ),
+                      backgroundColor: AppColors.success,
+                    ),
+                  );
+                }
               },
               style: ElevatedButton.styleFrom(backgroundColor: AppColors.primaryEmerald),
               child: Text(lang == 'ur' ? 'جمع کریں' : 'Submit'),
@@ -270,7 +287,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         final success = await ref.read(adminProvider.notifier).login(phone);
                         if (success && mounted) {
                           Navigator.pop(context);
-                          context.go('/admin');
+                          context.push('/admin');
                         }
                       } else {
                         setDialogState(() {
@@ -365,24 +382,41 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ),
           ],
           const Divider(height: 1),
+
+          ListTile(
+            leading: const Icon(Icons.admin_panel_settings, color: AppColors.accentGold),
+            title: Text(lang == 'ur' ? 'سپر ایڈمن لاگ ان' : 'Super Admin Console'),
+            subtitle: Text(lang == 'ur' ? 'پلیٹ فارم کے انتظام کے لیے' : 'Global platform controls and moderation'),
+            trailing: const Icon(Icons.arrow_forward_ios, size: 14),
+            onTap: () => context.push('/superadmin'),
+          ),
+          const Divider(height: 1),
           
           // App Information Footer
           const SizedBox(height: 64),
           Center(
-            child: Column(
-              children: [
-                Text(
-                  'NIDA · نداء',
-                  style: GoogleFonts.cormorantGaramond(
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.accentGold,
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onDoubleTap: () {
+                context.push('/superadmin');
+              },
+              child: Column(
+                children: [
+                  Text(
+                    'NIDA · نداء',
+                    style: GoogleFonts.cormorantGaramond(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.accentGold,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 4),
-                const Text('Version 4.0 (Mock-First Platform)', style: TextStyle(color: Colors.grey, fontSize: 11)),
-                const Text('Worldwide Location Seeding Active', style: TextStyle(color: Colors.grey, fontSize: 11)),
-              ],
+                  const SizedBox(height: 4),
+                  const Text('Version 5.0 (Super Admin Enabled)', style: TextStyle(color: Colors.grey, fontSize: 11)),
+                  const Text('Worldwide Location Seeding Active', style: TextStyle(color: Colors.grey, fontSize: 11)),
+                  const SizedBox(height: 4),
+                  const Text('(Double-tap logo to enter Super Admin Console)', style: TextStyle(color: Colors.white24, fontSize: 9)),
+                ],
+              ),
             ),
           ),
         ],
