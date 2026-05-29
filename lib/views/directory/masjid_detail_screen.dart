@@ -263,14 +263,12 @@ class MasjidDetailScreen extends ConsumerWidget {
         : Uri.parse('https://www.google.com/maps/search/?api=1&query=$lat,$lon');
         
     try {
-      if (await canLaunchUrl(uri)) {
-        await launchUrl(uri, mode: LaunchMode.externalApplication);
-      } else {
+      final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+      if (!launched) {
         final fallbackUri = Uri.parse('https://www.google.com/maps/search/?api=1&query=$lat,$lon');
-        if (await canLaunchUrl(fallbackUri)) {
-          await launchUrl(fallbackUri, mode: LaunchMode.externalApplication);
-        } else {
-          throw 'Could not launch map application.';
+        final fallbackLaunched = await launchUrl(fallbackUri, mode: LaunchMode.externalApplication);
+        if (!fallbackLaunched) {
+          throw 'Could not launch standard map browser application.';
         }
       }
     } catch (e) {
