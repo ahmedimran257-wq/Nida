@@ -1,6 +1,8 @@
+import 'dart:io' show Platform;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../constants/colors.dart';
 import '../../providers/locale_provider.dart';
@@ -138,43 +140,52 @@ class MasjidDetailScreen extends ConsumerWidget {
                         style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                       ),
                       const SizedBox(height: 8),
-                      Container(
-                        height: 120,
-                        decoration: BoxDecoration(
-                          color: isDark ? AppColors.backgroundDark : Colors.grey[150],
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: isDark ? Colors.white10 : Colors.black12),
+                      InkWell(
+                        onTap: () => _openMap(
+                          context,
+                          lang == 'ur' || lang == 'ar' ? masjid.nameArabic : masjid.nameEnglish,
+                          masjid.latitude,
+                          masjid.longitude,
                         ),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(12),
-                          child: Stack(
-                            children: [
-                              Positioned.fill(
-                                child: CustomPaint(
-                                  painter: MapMockupPainter(isDark: isDark),
-                                ),
-                              ),
-                              Center(
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                  decoration: BoxDecoration(
-                                    color: AppColors.primaryEmerald.withOpacity(0.9),
-                                    borderRadius: BorderRadius.circular(20),
-                                  ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      const Icon(Icons.navigation, size: 14, color: Colors.white),
-                                      const SizedBox(width: 6),
-                                      Text(
-                                        lang == 'ur' ? 'نیویگیشن شروع کریں' : 'Open in Maps',
-                                        style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
-                                      ),
-                                    ],
+                        borderRadius: BorderRadius.circular(12),
+                        child: Container(
+                          height: 120,
+                          decoration: BoxDecoration(
+                            color: isDark ? AppColors.backgroundDark : Colors.grey[150],
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: isDark ? Colors.white10 : Colors.black12),
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(12),
+                            child: Stack(
+                              children: [
+                                Positioned.fill(
+                                  child: CustomPaint(
+                                    painter: MapMockupPainter(isDark: isDark),
                                   ),
                                 ),
-                              ),
-                            ],
+                                Center(
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.primaryEmerald.withOpacity(0.9),
+                                      borderRadius: BorderRadius.circular(20),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        const Icon(Icons.navigation, size: 14, color: Colors.white),
+                                        const SizedBox(width: 6),
+                                        Text(
+                                          lang == 'ur' ? 'نیویگیشن شروع کریں' : 'Open in Maps',
+                                          style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ),
@@ -244,6 +255,34 @@ class MasjidDetailScreen extends ConsumerWidget {
           body: Center(child: Text('Error: $err')),
         ),
       );
+  }
+
+  Future<void> _openMap(BuildContext context, String name, double lat, double lon) async {
+    final Uri uri = Platform.isIOS
+        ? Uri.parse('https://maps.apple.com/?q=${Uri.encodeComponent(name)}&ll=$lat,$lon')
+        : Uri.parse('https://www.google.com/maps/search/?api=1&query=$lat,$lon');
+        
+    try {
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      } else {
+        final fallbackUri = Uri.parse('https://www.google.com/maps/search/?api=1&query=$lat,$lon');
+        if (await canLaunchUrl(fallbackUri)) {
+          await launchUrl(fallbackUri, mode: LaunchMode.externalApplication);
+        } else {
+          throw 'Could not launch map application.';
+        }
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Could not open map: $e'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    }
   }
 }
 
