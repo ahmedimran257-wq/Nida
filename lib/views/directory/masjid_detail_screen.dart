@@ -30,19 +30,37 @@ class MasjidDetailScreen extends ConsumerWidget {
     
     final isFollowing = ref.watch(isFollowingMasjidProvider(masjidId));
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(lang == 'ur' ? 'مسجد کی تفصیل' : 'Masjid Profile'),
-      ),
-      body: masjidsAsync.when(
-        data: (masjids) {
-          final idx = masjids.indexWhere((m) => m.id == masjidId);
-          if (idx == -1) {
-            return Center(child: Text(lang == 'ur' ? 'معلومات دستیاب نہیں ہیں' : 'Masjid not found.'));
-          }
-          final masjid = masjids[idx];
+    return masjidsAsync.when(
+      data: (masjids) {
+        final idx = masjids.indexWhere((m) => m.id == masjidId);
+        if (idx == -1) {
+          return Scaffold(
+            appBar: AppBar(title: Text(lang == 'ur' ? 'مسجد کی تفصیل' : 'Masjid Profile')),
+            body: Center(child: Text(lang == 'ur' ? 'معلومات دستیاب نہیں ہیں' : 'Masjid not found.')),
+          );
+        }
+        final masjid = masjids[idx];
 
-          return CustomScrollView(
+        return Scaffold(
+          appBar: AppBar(
+            title: Text(lang == 'ur' || lang == 'ar' ? masjid.nameArabic : masjid.nameEnglish),
+            actions: [
+              TextButton.icon(
+                icon: Icon(
+                  isFollowing ? Icons.notifications_active : Icons.notifications_none,
+                  color: AppColors.accentGold,
+                ),
+                label: Text(
+                  isFollowing 
+                      ? (lang == 'ur' ? 'فالو کر رہے ہیں' : 'Following') 
+                      : (lang == 'ur' ? 'فالو کریں' : 'Follow'),
+                  style: const TextStyle(color: AppColors.accentGold, fontWeight: FontWeight.bold),
+                ),
+                onPressed: () => ref.read(masjidFollowActionProvider).toggleFollow(masjidId),
+              ),
+            ],
+          ),
+          body: CustomScrollView(
             slivers: [
               // Header Card
               SliverToBoxAdapter(
@@ -94,22 +112,7 @@ class MasjidDetailScreen extends ConsumerWidget {
                             ),
                           ),
                           
-                          // Follow button
-                          ElevatedButton(
-                            onPressed: () {
-                              ref.read(masjidFollowActionProvider).toggleFollow(masjid.id);
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: isFollowing ? Colors.grey.withOpacity(0.2) : AppColors.primaryEmerald,
-                              foregroundColor: isFollowing ? (isDark ? Colors.white : Colors.black87) : Colors.white,
-                              elevation: 0,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                            ),
-                            child: Text(
-                              isFollowing ? getTranslation(lang, 'following') : getTranslation(lang, 'follow'),
-                              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
-                            ),
-                          ),
+                          // Follow button relocated to AppBar actions
                         ],
                       ),
                       
@@ -229,12 +232,18 @@ class MasjidDetailScreen extends ConsumerWidget {
                 ),
               ),
             ],
-          );
-        },
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (err, _) => Center(child: Text('Error: $err')),
-      ),
-    );
+          ),
+        );
+      },
+        loading: () => Scaffold(
+          appBar: AppBar(title: Text(lang == 'ur' ? 'مسجد کی تفصیل' : 'Masjid Profile')),
+          body: const Center(child: CircularProgressIndicator()),
+        ),
+        error: (err, _) => Scaffold(
+          appBar: AppBar(title: Text(lang == 'ur' ? 'مسجد کی تفصیل' : 'Masjid Profile')),
+          body: Center(child: Text('Error: $err')),
+        ),
+      );
   }
 }
 

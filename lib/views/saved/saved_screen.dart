@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../constants/colors.dart';
 import '../../providers/locale_provider.dart';
@@ -23,6 +24,12 @@ class SavedScreen extends ConsumerWidget {
       appBar: AppBar(
         title: Text(getTranslation(lang, 'savedAnnouncements')),
         automaticallyImplyLeading: false,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.settings_outlined),
+            onPressed: () => context.push('/settings'),
+          ),
+        ],
       ),
       body: FutureBuilder<List<Announcement>>(
         future: savedService.getSavedAnnouncements(savedIds),
@@ -68,48 +75,70 @@ class SavedScreen extends ConsumerWidget {
             );
           }
 
-          return ListView.builder(
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            itemCount: savedAnnouncements.length,
-            itemBuilder: (context, index) {
-              final a = savedAnnouncements[index];
-              final now = DateTime.now();
-              final isExpired = now.isAfter(a.expiresAt);
+          final active = savedAnnouncements.where((a) => a.expiresAt.isAfter(DateTime.now())).toList();
+          final ended = savedAnnouncements.where((a) => a.expiresAt.isBefore(DateTime.now())).toList();
 
-              return Stack(
-                children: [
-                  AnnouncementCard(announcement: a),
-                  
-                  // Expired overlay banner
-                  if (isExpired)
-                    Positioned.fill(
-                      child: Container(
-                        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                        decoration: BoxDecoration(
-                          color: Colors.black.withOpacity(0.4),
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        alignment: Alignment.center,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                          decoration: BoxDecoration(
-                            color: AppColors.error,
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: Text(
-                            getTranslation(lang, 'ended').toUpperCase(),
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 11,
-                              fontWeight: FontWeight.bold,
+          return ListView(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            children: [
+              if (active.isNotEmpty) ...[
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  child: Text(
+                    lang == 'ur' ? 'سرگرم پروگرام' : 'Active Programs',
+                    style: GoogleFonts.cormorantGaramond(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.accentGold,
+                    ),
+                  ),
+                ),
+                ...active.map((a) => AnnouncementCard(announcement: a)),
+              ],
+              if (ended.isNotEmpty) ...[
+                Padding(
+                  padding: const EdgeInsets.only(left: 16, right: 16, top: 16, bottom: 8),
+                  child: Text(
+                    lang == 'ur' ? 'سابقہ پروگرام' : 'Past Programs',
+                    style: GoogleFonts.cormorantGaramond(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.grey,
+                    ),
+                  ),
+                ),
+                ...ended.map((a) => Stack(
+                      children: [
+                        AnnouncementCard(announcement: a),
+                        Positioned.fill(
+                          child: Container(
+                            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: Colors.black.withOpacity(0.45),
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            alignment: Alignment.center,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                              decoration: BoxDecoration(
+                                color: AppColors.error.withOpacity(0.85),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Text(
+                                getTranslation(lang, 'ended').toUpperCase(),
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                    ),
-                ],
-              );
-            },
+                      ],
+                    )),
+              ],
+            ],
           );
         },
       ),

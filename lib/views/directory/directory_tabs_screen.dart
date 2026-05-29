@@ -48,6 +48,12 @@ class _DirectoryTabsScreenState extends ConsumerState<DirectoryTabsScreen> with 
     return Scaffold(
       appBar: AppBar(
         title: Text(lang == 'ur' ? 'ڈائریکٹری' : 'Explore Community'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.settings_outlined),
+            onPressed: () => context.push('/settings'),
+          ),
+        ],
         bottom: TabBar(
           controller: _tabController,
           indicatorColor: AppColors.accentGold,

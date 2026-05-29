@@ -8,8 +8,10 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../../../constants/colors.dart';
 import '../../../models/announcement.dart';
+import 'package:go_router/go_router.dart';
 import '../../../providers/locale_provider.dart';
 import '../../../providers/preferences_provider.dart';
+import '../../../providers/feed_provider.dart';
 import '../../../services/location/prayer_times_calculator.dart';
 import '../../../services/service_locator.dart';
 import '../../../services/reminder_service.dart';
@@ -121,9 +123,9 @@ class _AnnouncementCardState extends ConsumerState<AnnouncementCard> {
     final lang = ref.read(localeProvider).languageCode;
     showDialog(
       context: context,
-      builder: (context) {
+      builder: (dialogContext) {
         return AlertDialog(
-          backgroundColor: Theme.of(context).brightness == Brightness.dark
+          backgroundColor: Theme.of(dialogContext).brightness == Brightness.dark
               ? AppColors.surfaceDark
               : Colors.white,
           title: Text(lang == 'ur' ? 'رپورٹ کریں' : 'Report Announcement'),
@@ -132,15 +134,15 @@ class _AnnouncementCardState extends ConsumerState<AnnouncementCard> {
             children: [
               ListTile(
                 title: Text(lang == 'ur' ? 'غلط معلومات' : 'Incorrect Information'),
-                onTap: () => Navigator.pop(context, 'wrong'),
+                onTap: () => dialogContext.pop('wrong'),
               ),
               ListTile(
                 title: Text(lang == 'ur' ? 'سپیم / اشتہار' : 'Spam / Advertisement'),
-                onTap: () => Navigator.pop(context, 'spam'),
+                onTap: () => dialogContext.pop('spam'),
               ),
               ListTile(
                 title: Text(lang == 'ur' ? 'نا مناسب مواد' : 'Offensive Content'),
-                onTap: () => Navigator.pop(context, 'offensive'),
+                onTap: () => dialogContext.pop('offensive'),
               ),
             ],
           ),
@@ -170,9 +172,9 @@ class _AnnouncementCardState extends ConsumerState<AnnouncementCard> {
     
     showDialog<int>(
       context: context,
-      builder: (context) {
+      builder: (dialogContext) {
         return AlertDialog(
-          backgroundColor: Theme.of(context).brightness == Brightness.dark
+          backgroundColor: Theme.of(dialogContext).brightness == Brightness.dark
               ? AppColors.surfaceDark
               : Colors.white,
           title: Text(lang == 'ur' ? 'یاد دہانی ترتیب دیں' : 'Set Reminder'),
@@ -182,28 +184,28 @@ class _AnnouncementCardState extends ConsumerState<AnnouncementCard> {
               ListTile(
                 leading: const Icon(Icons.alarm, color: AppColors.accentGold),
                 title: Text(lang == 'ur' ? '15 منٹ پہلے' : '15 minutes before'),
-                onTap: () => Navigator.pop(context, 15),
+                onTap: () => dialogContext.pop(15),
               ),
               ListTile(
                 leading: const Icon(Icons.alarm, color: AppColors.accentGold),
                 title: Text(lang == 'ur' ? '30 منٹ پہلے' : '30 minutes before'),
-                onTap: () => Navigator.pop(context, 30),
+                onTap: () => dialogContext.pop(30),
               ),
               ListTile(
                 leading: const Icon(Icons.alarm, color: AppColors.accentGold),
                 title: Text(lang == 'ur' ? '1 گھنٹہ پہلے' : '1 hour before'),
-                onTap: () => Navigator.pop(context, 60),
+                onTap: () => dialogContext.pop(60),
               ),
               ListTile(
                 leading: const Icon(Icons.alarm, color: AppColors.accentGold),
                 title: Text(lang == 'ur' ? '1 دن پہلے' : '1 day before'),
-                onTap: () => Navigator.pop(context, 1440),
+                onTap: () => dialogContext.pop(1440),
               ),
               const Divider(),
               ListTile(
                 leading: const Icon(Icons.notifications_off, color: Colors.grey),
                 title: Text(lang == 'ur' ? 'منسوخ کریں' : 'Cancel Reminder'),
-                onTap: () => Navigator.pop(context, -1),
+                onTap: () => dialogContext.pop(-1),
               ),
             ],
           ),
@@ -251,11 +253,8 @@ class _AnnouncementCardState extends ConsumerState<AnnouncementCard> {
     // Resolve prayer relative label
     // In our MockData, Kurnool city is used
     final cityId = widget.announcement.cityId;
-    
-    return FutureBuilder(
-      future: citiesService.getCityById(cityId),
-      builder: (context, snapshot) {
-        final city = snapshot.data;
+    final cityAsync = ref.watch(cityDetailsProvider(cityId));
+    final city = cityAsync.value;
         final relativeTime = city != null
             ? PrayerTimesCalculator.getRelativePrayerLabel(city, widget.announcement.scheduledTime)
             : 'Today';
@@ -523,10 +522,8 @@ class _AnnouncementCardState extends ConsumerState<AnnouncementCard> {
               ],
             ),
           ),
-          ),
-        );
-      },
-    );
+        ),
+      );
   }
 }
 

@@ -316,13 +316,63 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final lang = localeState.languageCode;
     final prefsState = ref.watch(preferencesProvider);
     final adminState = ref.watch(adminProvider);
+    final pendingCount = ref.watch(superAdminProvider).pendingRequests.length;
 
     return Scaffold(
       appBar: AppBar(
         title: Text(getTranslation(lang, 'settings')),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            if (context.canPop()) {
+              context.pop();
+            } else {
+              context.go('/feed'); // safety fallback if stack is empty
+            }
+          },
+        ),
       ),
       body: ListView(
         children: [
+          if (adminState.isLoggedIn) ...[
+            Container(
+              margin: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: AppColors.primaryEmerald.withOpacity(0.08),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppColors.primaryEmerald.withOpacity(0.3)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.verified_outlined, color: AppColors.primaryEmerald),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Admin: ${adminState.adminName ?? "Imam Admin"}',
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        const Text('Masjid Admin Account', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                      ],
+                    ),
+                  ),
+                  ElevatedButton(
+                    onPressed: () => context.push('/admin'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primaryEmerald,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    ),
+                    child: const Text('Admin Panel'),
+                  ),
+                ],
+              ),
+            ),
+            const Divider(height: 1),
+          ],
           // 1. Language settings
           ListTile(
             leading: const Icon(Icons.language, color: AppColors.accentGold),
@@ -391,7 +441,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             leading: const Icon(Icons.admin_panel_settings, color: AppColors.accentGold),
             title: Text(lang == 'ur' ? 'سپر ایڈمن لاگ ان' : 'Super Admin Console'),
             subtitle: Text(lang == 'ur' ? 'پلیٹ فارم کے انتظام کے لیے' : 'Global platform controls and moderation'),
-            trailing: const Icon(Icons.arrow_forward_ios, size: 14),
+            trailing: pendingCount > 0
+                ? Badge(
+                    label: Text('$pendingCount'),
+                    child: const Icon(Icons.arrow_forward_ios, size: 14),
+                  )
+                : const Icon(Icons.arrow_forward_ios, size: 14),
             onTap: () => context.push('/superadmin'),
           ),
           const Divider(height: 1),

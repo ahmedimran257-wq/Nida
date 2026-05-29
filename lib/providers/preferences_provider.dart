@@ -9,6 +9,7 @@ class PreferencesState {
   final bool isFirstLaunch;
   final String anonymousUid;
   final bool ramadanManualOverride;
+  final bool isLanguageChosen;
 
   PreferencesState({
     this.cityId,
@@ -17,6 +18,7 @@ class PreferencesState {
     required this.isFirstLaunch,
     required this.anonymousUid,
     this.ramadanManualOverride = false,
+    this.isLanguageChosen = false,
   });
 
   PreferencesState copyWith({
@@ -26,6 +28,7 @@ class PreferencesState {
     bool? isFirstLaunch,
     String? anonymousUid,
     bool? ramadanManualOverride,
+    bool? isLanguageChosen,
   }) {
     return PreferencesState(
       cityId: cityId ?? this.cityId,
@@ -34,6 +37,7 @@ class PreferencesState {
       isFirstLaunch: isFirstLaunch ?? this.isFirstLaunch,
       anonymousUid: anonymousUid ?? this.anonymousUid,
       ramadanManualOverride: ramadanManualOverride ?? this.ramadanManualOverride,
+      isLanguageChosen: isLanguageChosen ?? this.isLanguageChosen,
     );
   }
 }
@@ -44,6 +48,7 @@ class PreferencesNotifier extends StateNotifier<PreferencesState> {
     savedAnnouncements: [],
     isFirstLaunch: true,
     anonymousUid: '',
+    isLanguageChosen: false,
   )) {
     _loadPreferences();
   }
@@ -54,6 +59,7 @@ class PreferencesNotifier extends StateNotifier<PreferencesState> {
   static const String _firstLaunchKey = 'nida_first_launch';
   static const String _uidKey = 'nida_anonymous_uid';
   static const String _ramadanKey = 'nida_ramadan_override';
+  static const String _langChosenKey = 'nida_language_chosen';
 
   Future<void> _loadPreferences() async {
     final prefs = await SharedPreferences.getInstance();
@@ -70,6 +76,7 @@ class PreferencesNotifier extends StateNotifier<PreferencesState> {
     final savedAnnouncements = prefs.getStringList(_savedKey) ?? [];
     final isFirstLaunch = prefs.getBool(_firstLaunchKey) ?? true;
     final ramadanOverride = prefs.getBool(_ramadanKey) ?? false;
+    final isLanguageChosen = prefs.getBool(_langChosenKey) ?? false;
 
     state = PreferencesState(
       cityId: cityId,
@@ -78,7 +85,14 @@ class PreferencesNotifier extends StateNotifier<PreferencesState> {
       isFirstLaunch: isFirstLaunch,
       anonymousUid: uid,
       ramadanManualOverride: ramadanOverride,
+      isLanguageChosen: isLanguageChosen,
     );
+  }
+
+  Future<void> setLanguageChosen() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_langChosenKey, true);
+    state = state.copyWith(isLanguageChosen: true);
   }
 
   Future<void> setCityId(String? cityId) async {

@@ -54,8 +54,12 @@ class _FeedScreenState extends ConsumerState<FeedScreen> with SingleTickerProvid
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     // Get city details for header name display
-    final cityName = cityId.split('_').first;
-    final formattedCityName = cityName[0].toUpperCase() + cityName.substring(1);
+    final cityAsync = ref.watch(cityDetailsProvider(cityId));
+    final formattedCityName = cityAsync.when(
+      data: (city) => city?.cityName ?? cityId.split('_').first,
+      loading: () => '...',
+      error: (_, __) => cityId.split('_').first,
+    );
 
     final selectedTab = ref.watch(feedTabSelectionProvider);
     final groupedFeedAsync = ref.watch(groupedFeedProvider(cityId));
@@ -175,7 +179,7 @@ class _FeedScreenState extends ConsumerState<FeedScreen> with SingleTickerProvid
                                     onPressed: () {
                                       // Switch bottom bar navigation to Directory
                                       // Or push directly to directory view
-                                      context.push('/directory');
+                                      context.go('/directory');
                                     },
                                     style: ElevatedButton.styleFrom(
                                       backgroundColor: AppColors.primaryEmerald,

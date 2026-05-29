@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -14,6 +15,9 @@ class SuperAdminDashboard extends ConsumerStatefulWidget {
 }
 
 class _SuperAdminDashboardState extends ConsumerState<SuperAdminDashboard> {
+  bool _showAllRequests = false;
+  bool _showAllFlagged = false;
+
   @override
   void initState() {
     super.initState();
@@ -90,13 +94,7 @@ class _SuperAdminDashboardState extends ConsumerState<SuperAdminDashboard> {
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () {
-            if (context.canPop()) {
-              context.pop();
-            } else {
-              context.go('/settings');
-            }
-          },
+          onPressed: () => context.go('/settings'), // return to settings
         ),
         title: Text(
           'Super Admin Console',
@@ -223,7 +221,7 @@ class _SuperAdminDashboardState extends ConsumerState<SuperAdminDashboard> {
               ListView.builder(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
-                itemCount: state.pendingRequests.length,
+                itemCount: _showAllRequests ? state.pendingRequests.length : math.min(2, state.pendingRequests.length),
                 itemBuilder: (context, index) {
                   final req = state.pendingRequests[index];
                   return Card(
@@ -245,6 +243,14 @@ class _SuperAdminDashboardState extends ConsumerState<SuperAdminDashboard> {
                   );
                 },
               ),
+              if (state.pendingRequests.length > 2)
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton(
+                    onPressed: () => setState(() => _showAllRequests = !_showAllRequests),
+                    child: Text(_showAllRequests ? 'Show Less' : 'View All Requests (${state.pendingRequests.length})'),
+                  ),
+                ),
             const SizedBox(height: 32),
 
             // Flagged announcements header
@@ -269,7 +275,7 @@ class _SuperAdminDashboardState extends ConsumerState<SuperAdminDashboard> {
               ListView.builder(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
-                itemCount: state.flaggedAnnouncements.length,
+                itemCount: _showAllFlagged ? state.flaggedAnnouncements.length : math.min(2, state.flaggedAnnouncements.length),
                 itemBuilder: (context, index) {
                   final a = state.flaggedAnnouncements[index];
                   return Card(
@@ -306,6 +312,14 @@ class _SuperAdminDashboardState extends ConsumerState<SuperAdminDashboard> {
                   );
                 },
               ),
+              if (state.flaggedAnnouncements.length > 2)
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton(
+                    onPressed: () => setState(() => _showAllFlagged = !_showAllFlagged),
+                    child: Text(_showAllFlagged ? 'Show Less' : 'View All Flagged (${state.flaggedAnnouncements.length})'),
+                  ),
+                ),
           ],
         ),
       ),

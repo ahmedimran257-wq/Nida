@@ -11,6 +11,7 @@ import '../../models/masjid.dart';
 import '../../models/scholar.dart';
 import '../../providers/admin_provider.dart';
 import '../../providers/masjid_provider.dart';
+import '../../providers/feed_provider.dart';
 import '../../providers/scholar_provider.dart';
 import 'package:adhan/adhan.dart';
 import '../../../services/location/prayer_times_calculator.dart';
@@ -249,6 +250,11 @@ class _PostAnnouncementScreenState extends ConsumerState<PostAnnouncementScreen>
     } else {
       await ref.read(adminProvider.notifier).postAnnouncement(newAnnouncement);
     }
+
+    // Force the feed to re-fetch so the new announcement appears immediately (Fix 4)
+    ref.invalidate(activeAnnouncementsProvider(cityId));
+    ref.invalidate(groupedFeedProvider(cityId));
+    ref.invalidate(liveAnnouncementsProvider(cityId));
 
     setState(() => _isLoading = false);
 

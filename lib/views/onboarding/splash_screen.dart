@@ -30,10 +30,10 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
 
     final prefs = ref.read(preferencesProvider);
 
-    if (prefs.isFirstLaunch) {
+    if (!prefs.isLanguageChosen) {
       context.go('/languages');
     } else if (prefs.cityId == null) {
-      context.go('/city-search');
+      context.go('/location-permission');
     } else {
       context.go('/feed');
     }

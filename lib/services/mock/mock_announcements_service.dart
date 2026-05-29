@@ -4,9 +4,23 @@ import '../interfaces/announcements_interface.dart';
 import 'mock_data.dart';
 
 class MockAnnouncementsService implements IAnnouncementsService {
-  // Broadcasters for stream subscriptions
-  static final _activeController = StreamController<List<Announcement>>.broadcast();
+  // Broadcasters mapped per cityId (Fix 5)
+  static final _cityControllers = <String, StreamController<List<Announcement>>>{};
   static final _masjidControllers = <String, StreamController<List<Announcement>>>{};
+
+  StreamController<List<Announcement>> _getCityController(String cityId) {
+    return _cityControllers.putIfAbsent(
+      cityId,
+      () => StreamController<List<Announcement>>.broadcast(),
+    );
+  }
+
+  StreamController<List<Announcement>> _getMasjidController(String masjidId) {
+    return _masjidControllers.putIfAbsent(
+      masjidId,
+      () => StreamController<List<Announcement>>.broadcast(),
+    );
+  }
 
   DateTime _parseDate(dynamic val) {
     if (val is DateTime) return val;
@@ -15,8 +29,9 @@ class MockAnnouncementsService implements IAnnouncementsService {
   }
 
   void _notifyListeners(String cityId, String? masjidId) {
-    // Notify general feed
     final now = DateTime.now();
+    
+    // Notify city-specific feed
     final active = MockData.announcements
         .where((a) =>
             a['cityId'] == cityId &&
@@ -24,7 +39,8 @@ class MockAnnouncementsService implements IAnnouncementsService {
             _parseDate(a['expiresAt']).isAfter(now))
         .map((a) => Announcement.fromMockMap(a))
         .toList();
-    _activeController.add(active);
+    active.sort((a, b) => a.scheduledTime.compareTo(b.scheduledTime));
+    _getCityController(cityId).add(active);
 
     // Notify masjid specific feed if provided
     if (masjidId != null) {
@@ -35,7 +51,7 @@ class MockAnnouncementsService implements IAnnouncementsService {
               _parseDate(a['expiresAt']).isAfter(now))
           .map((a) => Announcement.fromMockMap(a))
           .toList();
-      _masjidControllers[masjidId]?.add(masjidAnnouncements);
+      _getMasjidController(masjidId).add(masjidAnnouncements);
     }
   }
 
@@ -43,19 +59,15 @@ class MockAnnouncementsService implements IAnnouncementsService {
   Stream<List<Announcement>> watchActiveAnnouncements(String cityId) {
     // Emit initial values immediately
     Timer.run(() => _notifyListeners(cityId, null));
-    return _activeController.stream;
+    return _getCityController(cityId).stream;
   }
 
   @override
   Stream<List<Announcement>> watchMasjidAnnouncements(String masjidId) {
-    final controller = _masjidControllers.putIfAbsent(
-      masjidId,
-      () => StreamController<List<Announcement>>.broadcast(),
-    );
     // Find cityId to trigger initial notifications
     final cityId = MockData.masjids.firstWhere((m) => m['id'] == masjidId)['cityId'] as String;
     Timer.run(() => _notifyListeners(cityId, masjidId));
-    return controller.stream;
+    return _getMasjidController(masjidId).stream;
   }
 
   @override

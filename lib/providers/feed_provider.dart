@@ -2,6 +2,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../models/announcement.dart';
 import '../services/service_locator.dart';
 import 'preferences_provider.dart';
+import '../../models/city.dart';
+
+final cityDetailsProvider = FutureProvider.family<LocationCity?, String>((ref, cityId) async {
+  return citiesService.getCityById(cityId);
+});
 
 // Stream of active announcements for the selected city
 final activeAnnouncementsProvider = StreamProvider.family<List<Announcement>, String>((ref, cityId) {

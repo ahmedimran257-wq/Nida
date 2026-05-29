@@ -22,6 +22,13 @@ class _CitySearchScreenState extends ConsumerState<CitySearchScreen> {
   List<LocationCity> _searchResults = [];
   bool _isLoading = false;
   Timer? _debounceTimer;
+  late Future<List<LocationCity>> _allCitiesFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _allCitiesFuture = citiesService.searchCities('');
+  }
 
   @override
   void dispose() {
@@ -56,10 +63,43 @@ class _CitySearchScreenState extends ConsumerState<CitySearchScreen> {
 
   Future<void> _selectCity(LocationCity city) async {
     if (city.isActive) {
-      await ref.read(preferencesProvider.notifier).setCityId(city.id);
-      await ref.read(preferencesProvider.notifier).setFirstLaunchComplete();
-      if (mounted) {
-        context.go('/feed');
+      final prefs = ref.read(preferencesProvider);
+      final isFirstLaunch = prefs.isFirstLaunch;
+      
+      bool confirm = true;
+      if (!isFirstLaunch && prefs.cityId != null && prefs.cityId != city.id) {
+        confirm = await showDialog<bool>(
+          context: context,
+          builder: (_) => AlertDialog(
+            backgroundColor: Theme.of(context).brightness == Brightness.dark
+                ? AppColors.surfaceDark
+                : Colors.white,
+            title: const Text('Change City?'),
+            content: Text('Switch your feed to ${city.cityName}?'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('Switch', style: TextStyle(color: AppColors.primaryEmerald, fontWeight: FontWeight.bold)),
+              ),
+            ],
+          ),
+        ) ?? false;
+      }
+
+      if (confirm) {
+        await ref.read(preferencesProvider.notifier).setCityId(city.id);
+        await ref.read(preferencesProvider.notifier).setFirstLaunchComplete();
+        if (mounted) {
+          if (isFirstLaunch) {
+            context.go('/notification-permission');
+          } else {
+            context.go('/feed');
+          }
+        }
       }
     } else {
       context.push('/city-gate/${city.id}/${city.cityName}');
@@ -141,7 +181,7 @@ class _CitySearchScreenState extends ConsumerState<CitySearchScreen> {
               else if (_searchResults.isEmpty && _searchController.text.isEmpty)
                 Expanded(
                   child: FutureBuilder<List<LocationCity>>(
-                    future: citiesService.searchCities(''),
+                    future: _allCitiesFuture,
                     builder: (context, snapshot) {
                       if (!snapshot.hasData) {
                         return const Center(child: CircularProgressIndicator());

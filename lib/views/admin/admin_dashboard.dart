@@ -12,11 +12,18 @@ import '../../models/scholar.dart';
 import '../../services/service_locator.dart';
 import '../feed/widgets/announcement_card.dart';
 
-class AdminDashboard extends ConsumerWidget {
+class AdminDashboard extends ConsumerStatefulWidget {
   const AdminDashboard({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<AdminDashboard> createState() => _AdminDashboardState();
+}
+
+class _AdminDashboardState extends ConsumerState<AdminDashboard> {
+  int _refreshCounter = 0;
+
+  @override
+  Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final lang = ref.watch(localeProvider).languageCode;
     final adminState = ref.watch(adminProvider);
@@ -59,6 +66,7 @@ class AdminDashboard extends ConsumerWidget {
     final cityId = adminState.cityId!;
 
     return FutureBuilder<List<dynamic>>(
+      key: ValueKey(_refreshCounter),
       future: Future.wait([
         announcementsService.getAnnouncementsByAdmin(adminState.adminId!),
         masjidsService.getMasjids(cityId),
@@ -88,16 +96,22 @@ class AdminDashboard extends ConsumerWidget {
           appBar: AppBar(
             leading: IconButton(
               icon: const Icon(Icons.arrow_back),
+              tooltip: 'Back to App',
               onPressed: () {
                 if (context.canPop()) {
                   context.pop();
                 } else {
-                  context.go('/settings');
+                  context.go('/feed');
                 }
               },
             ),
             title: Text(lang == 'ur' ? 'ایڈمن ڈیش بورڈ' : 'Admin Panel'),
             actions: [
+              TextButton.icon(
+                onPressed: () => context.go('/feed'),
+                icon: const Icon(Icons.home_outlined, color: Colors.white),
+                label: const Text('Feed', style: TextStyle(color: Colors.white)),
+              ),
               IconButton(
                 icon: const Icon(Icons.logout),
                 onPressed: () {
@@ -191,10 +205,38 @@ class AdminDashboard extends ConsumerWidget {
                       const Text('QUICK ACTIONS', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey)),
                       const SizedBox(height: 8),
                       
-                      _actionTile(Icons.campaign, 'Post Announcement', 'Publish a new bayan or program details', () => context.push('/admin/post')),
-                      _actionTile(Icons.school, 'Add Scholar', 'Register a new scholar in the directory', () => context.push('/admin/add-scholar')),
-                      _actionTile(Icons.mosque, 'Add Masjid', 'Register a new masjid in the directory', () => context.push('/admin/add-masjid')),
-                      _actionTile(Icons.people, 'Manage Admin Team', 'Invite or manage city co-admins (Max 10)', () => context.push('/admin/team')),
+                      _actionTile(Icons.campaign, 'Post Announcement', 'Publish a new bayan or program details', () async {
+                        final result = await context.push('/admin/post');
+                        if (result == true && mounted) {
+                          setState(() {
+                            _refreshCounter++;
+                          });
+                        }
+                      }),
+                      _actionTile(Icons.school, 'Add Scholar', 'Register a new scholar in the directory', () async {
+                        final result = await context.push('/admin/add-scholar');
+                        if (result == true && mounted) {
+                          setState(() {
+                            _refreshCounter++;
+                          });
+                        }
+                      }),
+                      _actionTile(Icons.mosque, 'Add Masjid', 'Register a new masjid in the directory', () async {
+                        final result = await context.push('/admin/add-masjid');
+                        if (result == true && mounted) {
+                          setState(() {
+                            _refreshCounter++;
+                          });
+                        }
+                      }),
+                      _actionTile(Icons.people, 'Manage Admin Team', 'Invite or manage city co-admins (Max 10)', () async {
+                        final result = await context.push('/admin/team');
+                        if (result == true && mounted) {
+                          setState(() {
+                            _refreshCounter++;
+                          });
+                        }
+                      }),
                     ],
                   ),
                 ),
@@ -253,7 +295,14 @@ class AdminDashboard extends ConsumerWidget {
                                   right: 24,
                                   child: isEditable
                                       ? InkWell(
-                                          onTap: () => context.push('/admin/post', extra: a),
+                                          onTap: () async {
+                                            final result = await context.push('/admin/post', extra: a);
+                                            if (result == true && mounted) {
+                                              setState(() {
+                                                _refreshCounter++;
+                                              });
+                                            }
+                                          },
                                           child: Container(
                                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                             decoration: BoxDecoration(
@@ -345,6 +394,19 @@ class AdminDashboard extends ConsumerWidget {
               const SliverToBoxAdapter(child: SizedBox(height: 32)),
             ],
           ),
+          floatingActionButton: FloatingActionButton.extended(
+            onPressed: () async {
+              final result = await context.push('/admin/post');
+              if (result == true && mounted) {
+                setState(() {
+                  _refreshCounter++;
+                });
+              }
+            },
+            backgroundColor: AppColors.primaryEmerald,
+            icon: const Icon(Icons.add, color: Colors.white),
+            label: const Text('Post Bayan', style: TextStyle(color: Colors.white)),
+          ),
         );
       },
     );
@@ -377,6 +439,8 @@ class AdminDashboard extends ConsumerWidget {
       ),
     );
   }
+
+
 
   Widget _actionTile(IconData icon, String title, String subtitle, VoidCallback onTap) {
     return Card(

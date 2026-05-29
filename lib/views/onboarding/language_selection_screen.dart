@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../../constants/colors.dart';
 import '../../providers/locale_provider.dart';
+import '../../providers/preferences_provider.dart';
 import '../widgets/islamic_pattern_background.dart';
 import '../widgets/glassmorphic_container.dart';
 
@@ -138,8 +139,11 @@ class LanguageSelectionScreen extends ConsumerWidget {
               ),
               const SizedBox(height: 16),
               ElevatedButton(
-                onPressed: () {
-                  context.push('/location-permission');
+                onPressed: () async {
+                  await ref.read(preferencesProvider.notifier).setLanguageChosen();
+                  if (context.mounted) {
+                    context.push('/location-permission');
+                  }
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primaryEmerald,

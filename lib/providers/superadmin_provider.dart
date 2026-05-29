@@ -40,7 +40,9 @@ class SuperAdminState {
 }
 
 class SuperAdminNotifier extends StateNotifier<SuperAdminState> {
-  SuperAdminNotifier() : super(const SuperAdminState());
+  SuperAdminNotifier() : super(const SuperAdminState()) {
+    refreshPendingRequests();
+  }
 
   Future<bool> login(String email, String password) async {
     state = state.copyWith(error: null);

@@ -7,6 +7,7 @@ import '../../constants/colors.dart';
 import '../../providers/locale_provider.dart';
 import '../../providers/preferences_provider.dart';
 import '../../services/location/geocoding_stub.dart';
+import '../../services/mock/mock_data.dart';
 import '../widgets/islamic_pattern_background.dart';
 import '../widgets/glassmorphic_container.dart';
 
@@ -29,9 +30,15 @@ class _LocationPermissionScreenState extends ConsumerState<LocationPermissionScr
 
     if (!mounted) return;
 
-    // Simulate returning GPS coordinates for Kurnool, India
-    final mockLat = 15.8281;
-    final mockLon = 78.0373;
+    // Better mock: infer coordinates from device locale
+    final locale = WidgetsBinding.instance.platformDispatcher.locale;
+    final countryCode = locale.countryCode ?? 'IN';
+    final mockCity = MockData.cities.firstWhere(
+      (c) => c['countryCode'] == countryCode && c['isActive'] == true,
+      orElse: () => MockData.cities.firstWhere((c) => c['id'] == 'kurnool_in'),
+    );
+    final mockLat = mockCity['latitude'] as double? ?? 15.8281;
+    final mockLon = mockCity['longitude'] as double? ?? 78.0373;
 
     final city = await GeocodingStub.detectCityFromCoordinates(mockLat, mockLon);
 
@@ -39,11 +46,11 @@ class _LocationPermissionScreenState extends ConsumerState<LocationPermissionScr
 
     if (city != null) {
       if (city.isActive) {
-        // City is active - save preference and proceed
+        // City is active - save preference and proceed to notification permission request
         await ref.read(preferencesProvider.notifier).setCityId(city.id);
         await ref.read(preferencesProvider.notifier).setFirstLaunchComplete();
         if (mounted) {
-          context.go('/feed');
+          context.go('/notification-permission');
         }
       } else {
         // City is inactive - go to gate screen
@@ -54,7 +61,7 @@ class _LocationPermissionScreenState extends ConsumerState<LocationPermissionScr
     } else {
       // Proximity search failed, fallback to manual city search
       if (mounted) {
-        context.push('/city-search');
+        context.go('/city-search');
       }
     }
   }
@@ -158,7 +165,7 @@ class _LocationPermissionScreenState extends ConsumerState<LocationPermissionScr
                 
                 TextButton(
                   onPressed: () {
-                    context.push('/city-search');
+                    context.go('/city-search');
                   },
                   child: Text(
                     lang == 'ur' ? 'شہر دستی منتخب کریں' : 'Choose City Manually',

@@ -15,6 +15,7 @@ import 'views/onboarding/language_selection_screen.dart';
 import 'views/onboarding/location_permission_screen.dart';
 import 'views/onboarding/city_search_screen.dart';
 import 'views/onboarding/city_gate_screen.dart';
+import 'views/onboarding/notification_permission_screen.dart';
 import 'views/feed/feed_screen.dart';
 import 'views/directory/directory_tabs_screen.dart';
 import 'views/directory/scholar_detail_screen.dart';
@@ -52,6 +53,10 @@ final _routerProvider = Provider<GoRouter>((ref) {
           final cityName = state.pathParameters['cityName']!;
           return CityGateScreen(cityId: cityId, cityName: cityName);
         },
+      ),
+      GoRoute(
+        path: '/notification-permission',
+        builder: (context, state) => const NotificationPermissionScreen(),
       ),
       
       // Bottom Navigation Shell Route
