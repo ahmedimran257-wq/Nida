@@ -8,23 +8,6 @@ import '../../providers/superadmin_provider.dart';
 class CityManagementScreen extends ConsumerWidget {
   const CityManagementScreen({super.key});
 
-  int _getMockWaitlistCount(String cityId) {
-    switch (cityId) {
-      case 'hyderabad_in':
-        return 47;
-      case 'mumbai_in':
-        return 162;
-      case 'london_gb':
-        return 124;
-      case 'chicago_us':
-        return 89;
-      case 'sydney_au':
-        return 38;
-      default:
-        return 0;
-    }
-  }
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(superAdminProvider);
@@ -47,7 +30,7 @@ class CityManagementScreen extends ConsumerWidget {
           final cityId = city['id'] as String;
           final isActive = city['isActive'] as bool;
           final adminCount = city['adminCount'] as int;
-          final waitlistCount = _getMockWaitlistCount(cityId);
+          final waitlistCount = city['waitlistCount'] as int? ?? 0;
 
           return Card(
             color: AppColors.surfaceDark,

@@ -1,104 +1,10 @@
 import 'dart:convert';
 import 'package:crypto/crypto.dart';
+import 'world_cities_seed.dart';
 
 class MockData {
   // In-memory data tables that are modified during the runtime session
-  static final List<Map<String, dynamic>> cities = [
-    // India — Active
-    {
-      'id': 'kurnool_in',
-      'cityName': 'Kurnool',
-      'state': 'Andhra Pradesh',
-      'country': 'India',
-      'countryCode': 'IN',
-      'isActive': true,
-      'latitude': 15.8281,
-      'longitude': 78.0373,
-      'calculationMethod': 'karachi',
-      'timezone': 'Asia/Kolkata',
-      'adminCount': 2,
-      'maxAdmins': 10,
-      'ramadanOverride': null,
-    },
-    {
-      'id': 'hyderabad_in',
-      'cityName': 'Hyderabad',
-      'state': 'Telangana',
-      'country': 'India',
-      'countryCode': 'IN',
-      'isActive': false,
-      'latitude': 17.3850,
-      'longitude': 78.4867,
-      'calculationMethod': 'karachi',
-      'timezone': 'Asia/Kolkata',
-      'adminCount': 0,
-      'maxAdmins': 10,
-      'ramadanOverride': null,
-    },
-    {
-      'id': 'mumbai_in',
-      'cityName': 'Mumbai',
-      'state': 'Maharashtra',
-      'country': 'India',
-      'countryCode': 'IN',
-      'isActive': false,
-      'latitude': 19.0760,
-      'longitude': 72.8777,
-      'calculationMethod': 'karachi',
-      'timezone': 'Asia/Kolkata',
-      'adminCount': 0,
-      'maxAdmins': 10,
-      'ramadanOverride': null,
-    },
-    // UK
-    {
-      'id': 'london_gb',
-      'cityName': 'London',
-      'state': 'England',
-      'country': 'United Kingdom',
-      'countryCode': 'GB',
-      'isActive': false,
-      'latitude': 51.5074,
-      'longitude': -0.1278,
-      'calculationMethod': 'muslimWorldLeague',
-      'timezone': 'Europe/London',
-      'adminCount': 0,
-      'maxAdmins': 10,
-      'ramadanOverride': null,
-    },
-    // USA
-    {
-      'id': 'chicago_us',
-      'cityName': 'Chicago',
-      'state': 'Illinois',
-      'country': 'United States',
-      'countryCode': 'US',
-      'isActive': false,
-      'latitude': 41.8781,
-      'longitude': -87.6298,
-      'calculationMethod': 'northAmerica',
-      'timezone': 'America/Chicago',
-      'adminCount': 0,
-      'maxAdmins': 10,
-      'ramadanOverride': null,
-    },
-    // Australia
-    {
-      'id': 'sydney_au',
-      'cityName': 'Sydney',
-      'state': 'New South Wales',
-      'country': 'Australia',
-      'countryCode': 'AU',
-      'isActive': false,
-      'latitude': -33.8688,
-      'longitude': 151.2093,
-      'calculationMethod': 'muslimWorldLeague',
-      'timezone': 'Australia/Sydney',
-      'adminCount': 0,
-      'maxAdmins': 10,
-      'ramadanOverride': null,
-    },
-  ];
+  static final List<Map<String, dynamic>> cities = List.from(WorldCitiesSeed.cities);
 
   static final List<Map<String, dynamic>> masjids = [
     {
@@ -114,6 +20,8 @@ class MockData {
       'addedBy': 'superAdmin',
       'createdAt': DateTime.now().subtract(const Duration(days: 90)),
       'isActive': true,
+      'latitude': 15.8282,
+      'longitude': 78.0374,
     },
     {
       'id': 'masjid_002',
@@ -128,6 +36,8 @@ class MockData {
       'addedBy': 'superAdmin',
       'createdAt': DateTime.now().subtract(const Duration(days: 80)),
       'isActive': true,
+      'latitude': 15.8295,
+      'longitude': 78.0412,
     },
     {
       'id': 'masjid_003',
@@ -142,6 +52,8 @@ class MockData {
       'addedBy': 'admin_001',
       'createdAt': DateTime.now().subtract(const Duration(days: 70)),
       'isActive': true,
+      'latitude': 15.8318,
+      'longitude': 78.0356,
     },
     {
       'id': 'masjid_004',
@@ -156,6 +68,8 @@ class MockData {
       'addedBy': 'admin_002',
       'createdAt': DateTime.now().subtract(const Duration(days: 60)),
       'isActive': true,
+      'latitude': 15.8264,
+      'longitude': 78.0401,
     },
   ];
 
@@ -391,7 +305,15 @@ class MockData {
     },
   ];
 
-  static final List<Map<String, dynamic>> waitlist = [];
+  static final List<Map<String, dynamic>> waitlist = [
+    {'cityId': 'chicago_us', 'fcmToken': 'token_chi_1'},
+    {'cityId': 'chicago_us', 'fcmToken': 'token_chi_2'},
+    {'cityId': 'london_gb', 'fcmToken': 'token_lon_1'},
+    {'cityId': 'london_gb', 'fcmToken': 'token_lon_2'},
+    {'cityId': 'london_gb', 'fcmToken': 'token_lon_3'},
+    {'cityId': 'hyderabad_in', 'fcmToken': 'token_hyd_1'},
+    {'cityId': 'hyderabad_in', 'fcmToken': 'token_hyd_2'},
+  ];
 
   static final List<Map<String, dynamic>> adminRequests = [
     {

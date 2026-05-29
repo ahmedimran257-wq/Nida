@@ -139,80 +139,42 @@ class _CitySearchScreenState extends ConsumerState<CitySearchScreen> {
                   ),
                 )
               else if (_searchResults.isEmpty && _searchController.text.isEmpty)
-                // Default helper message with a quick-tap default city Kurnool
                 Expanded(
-                  child: ListView(
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 8.0),
-                        child: Text(
-                          lang == 'ur' ? 'تجویز کردہ شہر' : 'Suggested Cities',
-                          style: GoogleFonts.outfit(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14,
-                            color: Colors.grey,
-                          ),
-                        ),
-                      ),
-                      
-                      // Kurnool quick tap
-                      Card(
-                        color: isDark ? AppColors.surfaceDark : Colors.white,
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          side: BorderSide(color: isDark ? Colors.white10 : Colors.black12),
-                        ),
-                        child: ListTile(
-                          title: const Text('Kurnool', style: TextStyle(fontWeight: FontWeight.bold)),
-                          subtitle: const Text('Andhra Pradesh, India'),
-                          trailing: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: AppColors.success.withOpacity(0.15),
-                              borderRadius: BorderRadius.circular(6),
-                            ),
+                  child: FutureBuilder<List<LocationCity>>(
+                    future: citiesService.searchCities(''),
+                    builder: (context, snapshot) {
+                      if (!snapshot.hasData) {
+                        return const Center(child: CircularProgressIndicator());
+                      }
+                      final allCities = snapshot.data!;
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 12),
                             child: Text(
-                              getTranslation(lang, 'live'),
-                              style: const TextStyle(color: AppColors.success, fontSize: 11, fontWeight: FontWeight.bold),
+                              lang == 'ur'
+                                  ? '${allCities.length} شہر دنیا بھر میں دستیاب ہیں'
+                                  : '${allCities.length} cities available worldwide',
+                              style: GoogleFonts.outfit(
+                                fontSize: 13,
+                                color: Colors.grey,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ),
-                          onTap: () async {
-                            final city = await citiesService.getCityById('kurnool_in');
-                            if (city != null) _selectCity(city);
-                          },
-                        ),
-                      ),
-                      
-                      // London quick tap
-                      Card(
-                        color: isDark ? AppColors.surfaceDark : Colors.white,
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          side: BorderSide(color: isDark ? Colors.white10 : Colors.black12),
-                        ),
-                        child: ListTile(
-                          title: const Text('London', style: TextStyle(fontWeight: FontWeight.bold)),
-                          subtitle: const Text('England, United Kingdom'),
-                          trailing: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: AppColors.warning.withOpacity(0.15),
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: Text(
-                              getTranslation(lang, 'comingSoon'),
-                              style: const TextStyle(color: AppColors.warning, fontSize: 11, fontWeight: FontWeight.bold),
+                          Expanded(
+                            child: ListView.builder(
+                              itemCount: allCities.length,
+                              itemBuilder: (context, index) {
+                                final city = allCities[index];
+                                return _buildCityTile(city, isDark, lang);
+                              },
                             ),
                           ),
-                          onTap: () async {
-                            final city = await citiesService.getCityById('london_gb');
-                            if (city != null) _selectCity(city);
-                          },
-                        ),
-                      ),
-                    ],
+                        ],
+                      );
+                    },
                   ),
                 )
               else
@@ -221,45 +183,49 @@ class _CitySearchScreenState extends ConsumerState<CitySearchScreen> {
                     itemCount: _searchResults.length,
                     itemBuilder: (context, index) {
                       final city = _searchResults[index];
-                      return Card(
-                        color: isDark ? AppColors.surfaceDark : Colors.white,
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          side: BorderSide(color: isDark ? Colors.white10 : Colors.black12),
-                        ),
-                        margin: const EdgeInsets.only(bottom: 8),
-                        child: ListTile(
-                          title: Text(city.cityName, style: const TextStyle(fontWeight: FontWeight.bold)),
-                          subtitle: Text('${city.state}, ${city.country}'),
-                          trailing: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: city.isActive
-                                  ? AppColors.success.withOpacity(0.15)
-                                  : AppColors.warning.withOpacity(0.15),
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: Text(
-                              city.isActive
-                                  ? getTranslation(lang, 'live')
-                                  : getTranslation(lang, 'comingSoon'),
-                              style: TextStyle(
-                                color: city.isActive ? AppColors.success : AppColors.warning,
-                                fontSize: 11,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                          onTap: () => _selectCity(city),
-                        ),
-                      );
+                      return _buildCityTile(city, isDark, lang);
                     },
                   ),
                 ),
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildCityTile(LocationCity city, bool isDark, String lang) {
+    return Card(
+      color: isDark ? AppColors.surfaceDark : Colors.white,
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: isDark ? Colors.white10 : Colors.black12),
+      ),
+      margin: const EdgeInsets.only(bottom: 8),
+      child: ListTile(
+        title: Text(city.cityName, style: const TextStyle(fontWeight: FontWeight.bold)),
+        subtitle: Text('${city.state}, ${city.country}'),
+        trailing: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          decoration: BoxDecoration(
+            color: city.isActive
+                ? AppColors.success.withOpacity(0.15)
+                : AppColors.warning.withOpacity(0.15),
+            borderRadius: BorderRadius.circular(6),
+          ),
+          child: Text(
+            city.isActive
+                ? getTranslation(lang, 'live')
+                : getTranslation(lang, 'comingSoon'),
+            style: TextStyle(
+              color: city.isActive ? AppColors.success : AppColors.warning,
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+        onTap: () => _selectCity(city),
       ),
     );
   }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:uuid/uuid.dart';
+import 'package:geolocator/geolocator.dart';
 
 import '../../constants/colors.dart';
 import '../../models/masjid.dart';
@@ -23,6 +24,9 @@ class _AddMasjidScreenState extends ConsumerState<AddMasjidScreen> {
   final _addressController = TextEditingController();
 
   bool _isLoading = false;
+  double? _latitude;
+  double? _longitude;
+  bool _isGettingLocation = false;
 
   @override
   void dispose() {
@@ -31,6 +35,42 @@ class _AddMasjidScreenState extends ConsumerState<AddMasjidScreen> {
     _localityController.dispose();
     _addressController.dispose();
     super.dispose();
+  }
+
+  Future<void> _captureLocation() async {
+    setState(() => _isGettingLocation = true);
+    try {
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+      if (permission == LocationPermission.deniedForever) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Location permission denied. Please enable in device settings.')),
+          );
+        }
+        setState(() => _isGettingLocation = false);
+        return;
+      }
+
+      final position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.medium,
+      );
+      
+      setState(() {
+        _latitude = position.latitude;
+        _longitude = position.longitude;
+        _isGettingLocation = false;
+      });
+    } catch (e) {
+      setState(() => _isGettingLocation = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Could not get location: $e')),
+        );
+      }
+    }
   }
 
   Future<void> _handleSubmit(String cityId) async {
@@ -55,6 +95,8 @@ class _AddMasjidScreenState extends ConsumerState<AddMasjidScreen> {
       addedBy: admin.adminId!,
       createdAt: DateTime.now(),
       isActive: true,
+      latitude: _latitude ?? 0.0,
+      longitude: _longitude ?? 0.0,
     );
 
     await ref.read(adminProvider.notifier).createMasjid(newMasjid);
@@ -129,6 +171,8 @@ class _AddMasjidScreenState extends ConsumerState<AddMasjidScreen> {
               validator: (val) => val == null || val.trim().isEmpty ? 'Address is required' : null,
               maxLines: 2,
             ),
+            const SizedBox(height: 16),
+            _buildLocationPicker(),
             const SizedBox(height: 32),
 
             // Submit Button
@@ -147,6 +191,84 @@ class _AddMasjidScreenState extends ConsumerState<AddMasjidScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildLocationPicker() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'MASJID LOCATION',
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.grey),
+        ),
+        const SizedBox(height: 8),
+        
+        if (_latitude != null && _longitude != null)
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: AppColors.primaryEmerald.withOpacity(0.08),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: AppColors.primaryEmerald.withOpacity(0.3)),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.location_on, color: AppColors.primaryEmerald, size: 18),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Lat: ${_latitude!.toStringAsFixed(6)}\nLng: ${_longitude!.toStringAsFixed(6)}',
+                    style: const TextStyle(fontSize: 12, fontFamily: 'monospace'),
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.refresh, size: 18),
+                  onPressed: _captureLocation,
+                  tooltip: 'Re-capture',
+                ),
+              ],
+            ),
+          )
+        else
+          Text(
+            'No location captured yet. Tap the button below while standing at the masjid for maximum accuracy.',
+            style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+          ),
+        
+        const SizedBox(height: 10),
+        
+        SizedBox(
+          width: double.infinity,
+          child: OutlinedButton.icon(
+            onPressed: _isGettingLocation ? null : _captureLocation,
+            icon: _isGettingLocation
+                ? const SizedBox(
+                    width: 16, height: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.my_location, color: AppColors.accentGold),
+            label: Text(
+              _isGettingLocation
+                  ? 'Getting location...'
+                  : _latitude != null
+                      ? 'Update Location'
+                      : '📍 Capture Masjid Location (Stand Here)',
+            ),
+            style: OutlinedButton.styleFrom(
+              side: const BorderSide(color: AppColors.accentGold),
+              foregroundColor: AppColors.accentGold,
+              padding: const EdgeInsets.symmetric(vertical: 14),
+            ),
+          ),
+        ),
+        
+        const SizedBox(height: 6),
+        Text(
+          '⚠️ For accurate pinning: stand inside or directly in front of the masjid before tapping.',
+          style: TextStyle(fontSize: 11, color: Colors.grey.shade500, fontStyle: FontStyle.italic),
+        ),
+      ],
     );
   }
 }

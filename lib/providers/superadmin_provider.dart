@@ -62,6 +62,11 @@ class SuperAdminNotifier extends StateNotifier<SuperAdminState> {
     state = const SuperAdminState();
   }
 
+  Future<void> refreshPendingRequests() async {
+    final requests = await adminsService.getPendingAdminRequests();
+    state = state.copyWith(pendingRequests: requests);
+  }
+
   Future<void> loadData() async {
     if (!state.isLoggedIn) return;
     
@@ -80,6 +85,7 @@ class SuperAdminNotifier extends StateNotifier<SuperAdminState> {
       'timezone': c.timezone,
       'adminCount': c.adminCount,
       'maxAdmins': c.maxAdmins,
+      'waitlistCount': MockData.waitlist.where((w) => w['cityId'] == c.id).length,
     }).toList();
 
     // Query flagged announcements

@@ -7,6 +7,7 @@ import '../../constants/colors.dart';
 import '../../providers/locale_provider.dart';
 import '../../providers/preferences_provider.dart';
 import '../../providers/admin_provider.dart';
+import '../../providers/superadmin_provider.dart';
 import '../../services/mock/mock_data.dart';
 import '../../services/service_locator.dart';
 
@@ -91,7 +92,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
     showDialog(
       context: context,
-      builder: (context) {
+      builder: (dialogContext) {
         return AlertDialog(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           title: Text(
@@ -124,7 +125,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(context),
+              onPressed: () => Navigator.pop(dialogContext),
               child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
             ),
             ElevatedButton(
@@ -136,7 +137,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
                 if (name.isEmpty || phone.isEmpty || masjid.isEmpty || city.isEmpty) return;
 
-                Navigator.pop(context);
+                Navigator.pop(dialogContext);
 
                 await adminsService.submitAdminRequest(
                   name: name,
@@ -144,6 +145,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   masjidName: masjid,
                   cityName: city,
                 );
+
+                // Update Super Admin pending request count badge/state
+                ref.read(superAdminProvider.notifier).refreshPendingRequests();
 
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
@@ -180,9 +184,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
     showDialog(
       context: context,
-      builder: (context) {
+      builder: (dialogContext) {
         return StatefulBuilder(
-          builder: (context, setDialogState) {
+          builder: (statefulContext, setDialogState) {
             return AlertDialog(
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
               title: Text(
@@ -244,7 +248,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               ),
               actions: [
                 TextButton(
-                  onPressed: () => Navigator.pop(context),
+                  onPressed: () => Navigator.pop(dialogContext),
                   child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
                 ),
                 if (!_otpSent)
@@ -286,7 +290,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         final phone = _phoneController.text.trim();
                         final success = await ref.read(adminProvider.notifier).login(phone);
                         if (success && mounted) {
-                          Navigator.pop(context);
+                          Navigator.pop(dialogContext);
                           context.push('/admin');
                         }
                       } else {

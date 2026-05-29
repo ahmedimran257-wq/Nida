@@ -7,14 +7,26 @@ class MockCitiesService implements ICitiesService {
   @override
   Future<List<LocationCity>> searchCities(String query) async {
     await Future.delayed(const Duration(milliseconds: 100));
-    if (query.trim().isEmpty) return [];
+    if (query.trim().isEmpty) {
+      // Return all cities sorted: active first, then alphabetical
+      final all = MockData.cities
+          .map((c) => LocationCity.fromMap(c, c['id'] as String))
+          .toList();
+      all.sort((a, b) {
+        if (a.isActive && !b.isActive) return -1;
+        if (!a.isActive && b.isActive) return 1;
+        return a.cityName.compareTo(b.cityName);
+      });
+      return all;
+    }
     
     final lq = query.toLowerCase().trim();
     return MockData.cities
         .where((c) =>
             (c['cityName'] as String).toLowerCase().contains(lq) ||
             (c['country'] as String).toLowerCase().contains(lq) ||
-            (c['state'] as String).toLowerCase().contains(lq))
+            (c['state'] as String).toLowerCase().contains(lq) ||
+            (c['countryCode'] as String).toLowerCase() == lq)
         .map((c) => LocationCity.fromMap(c, c['id'] as String))
         .toList();
   }

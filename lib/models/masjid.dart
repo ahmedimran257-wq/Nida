@@ -11,6 +11,8 @@ class Masjid {
   final String addedBy;
   final DateTime createdAt;
   final bool isActive;
+  final double latitude;
+  final double longitude;
 
   Masjid({
     required this.id,
@@ -25,6 +27,8 @@ class Masjid {
     required this.addedBy,
     required this.createdAt,
     required this.isActive,
+    this.latitude = 0.0,
+    this.longitude = 0.0,
   });
 
   factory Masjid.fromMap(Map<String, dynamic> map, String docId) {
@@ -43,6 +47,8 @@ class Masjid {
           ? map['createdAt'] as DateTime
           : DateTime.tryParse(map['createdAt']?.toString() ?? '') ?? DateTime.now(),
       isActive: map['isActive'] as bool? ?? true,
+      latitude: (map['latitude'] as num? ?? 0.0).toDouble(),
+      longitude: (map['longitude'] as num? ?? 0.0).toDouble(),
     );
   }
 
@@ -59,6 +65,8 @@ class Masjid {
       'addedBy': addedBy,
       'createdAt': createdAt.toIso8601String(),
       'isActive': isActive,
+      'latitude': latitude,
+      'longitude': longitude,
     };
   }
 }
